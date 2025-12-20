@@ -3,6 +3,9 @@ import axios from "axios";
 import { toast, Toaster } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { BadgeAlert } from "lucide-react";
+import DigitalyLogo from '../assets/Digi.png';
+
+
 
 const Login = () => {
   const navigate = useNavigate();
@@ -61,12 +64,15 @@ const Login = () => {
         <Toaster position="top-right " />
  
       <div className="bg-white w-[380px] rounded-2xl shadow-md/50 p-8">
-        <h1 className="text-2xl font-bold text-blue-600 text-center">
-          Digitaly
-        </h1>
-        <p className="text-sm text-black text-center mt-1">
+      <div className="flex flex-col justify-center items-center">
+        <div className="w-15 h-15 ">
+          <img src={DigitalyLogo} alt="" />
+        </div>
+        <p className="text-sm text-black ">
           Login to your dashboard
         </p>
+      </div>
+        
 
         <form className="space-y-4 mt-6" onSubmit={handleLogin}>
           <div>

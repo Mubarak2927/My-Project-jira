@@ -35,7 +35,7 @@ const ProjectReportSummary = () => {
     }
   };
 
-  if (!report) return <p className="text-sm">Loading report...</p>;
+  if (!report) return <p className="text-sm animate-pulse">Loading Summary....</p>;
 
   /* ================= WORK ITEM STATUS ================= */
   const workStatusData = report.work_items_status.breakdown

@@ -1,12 +1,12 @@
-import { Plus, X } from "lucide-react";
+import { Eye, Plus, X } from "lucide-react";
 import React, { useState, useEffect } from "react";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { useOutletContext } from "react-router-dom";
 import { getSprint, createSprint } from "../API/ProjectAPI";
 
 export default function Sprint() {
-  const { project } = useOutletContext(); // get project from context
-  const projectId = project?.id; // fix undefined projectId
+  const { project } = useOutletContext();
+  const projectId = project?.id;
 
   const [showModal, setShowModal] = useState(false);
   const [sprints, setSprints] = useState([]);
@@ -16,9 +16,7 @@ export default function Sprint() {
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState(null);
-  
 
-  // Fetch sprints
   const fetchSprints = async () => {
     if (!projectId) return;
     try {
@@ -34,7 +32,6 @@ export default function Sprint() {
     if (project) fetchSprints();
   }, [project]);
 
-  // Create sprint
   const handleSprintCreate = async () => {
     if (!sprintName || !goal || !startDate || !endDate) {
       toast.error("All fields are required!");
@@ -49,7 +46,6 @@ export default function Sprint() {
         start_date: `${startDate}T00:00:00`,
         end_date: `${endDate}T23:59:59`,
       });
-
       toast.success("Sprint created successfully!");
       setSprintName("");
       setGoal("");
@@ -57,8 +53,6 @@ export default function Sprint() {
       setEndDate("");
       setSelectedWeek(null);
       setShowModal(false);
-
-      // Refresh sprint list after creation
       await fetchSprints();
     } catch (err) {
       console.error(err);
@@ -67,25 +61,14 @@ export default function Sprint() {
     setLoading(false);
   };
 
-  // Week selection
   const handleWeekSelect = (week) => {
     const today = new Date();
     let end;
     switch (week) {
-      case 1:
-        end = new Date(today);
-        end.setDate(today.getDate() + 7);
-        break;
-      case 2:
-        end = new Date(today);
-        end.setDate(today.getDate() + 14);
-        break;
-      case 4:
-        end = new Date(today);
-        end.setDate(today.getDate() + 30);
-        break;
-      default:
-        end = today;
+      case 1: end = new Date(today); end.setDate(today.getDate() + 7); break;
+      case 2: end = new Date(today); end.setDate(today.getDate() + 14); break;
+      case 4: end = new Date(today); end.setDate(today.getDate() + 30); break;
+      default: end = today;
     }
     const formatDate = (d) => d.toISOString().split("T")[0];
     setStartDate(formatDate(today));
@@ -94,110 +77,122 @@ export default function Sprint() {
   };
 
   return (
-    <div className="bg-gray-100 rounded-3xl p-5">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Sprint</h1>
+    <div className="p-6 bg-gray-200 h-[75vh] overflow-y-auto">
+      <Toaster position="top-right" />
 
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-extrabold text-gray-900">Sprints</h1>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-xl px-3 py-2 shadow-md"
+          className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-full shadow-md hover:scale-105 transition"
         >
-          <Plus size={18} className="mr-1" /> Create Sprint
+          <Plus size={18} /> New Sprint
         </button>
       </div>
 
-      {/* ============== MODAL ============== */}
+      {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-white/70 bg-opacity-40 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-3xl w-full max-w-lg shadow-xl">
-            {/* Modal Header */}
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Create New Sprint</h2>
-              <button onClick={() => setShowModal(false)}>
-                <X className="text-gray-500 hover:text-black" />
-              </button>
-            </div>
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 relative animate-fade-in">
+            <button
+              onClick={() => setShowModal(false)}
+              className="absolute top-5 right-5 text-gray-500 hover:text-gray-900 transition"
+            >
+              <X size={22} />
+            </button>
+            <h2 className="text-2xl font-bold mb-6 text-center">Create New Sprint</h2>
 
-            {/* Inputs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+            <div className="grid gap-4 mb-5">
               <input
                 type="text"
                 placeholder="Sprint Name"
                 value={sprintName}
                 onChange={(e) => setSprintName(e.target.value)}
-                className="px-4 py-3 rounded-2xl border border-gray-300"
+                className="px-4 py-3 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-100 transition"
               />
-
               <input
                 type="text"
                 placeholder="Sprint Goal"
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
-                className="px-4 py-3 rounded-2xl border border-gray-300"
+                className="px-4 py-3 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-100 transition"
               />
             </div>
 
-            {/* Week Selection */}
-            <div className="flex gap-3 mb-4">
-              {[1, 2, 4].map((week) => (
+            <div className="flex justify-center gap-3 mb-5">
+              {[1,2,4].map((week) => (
                 <button
                   key={week}
                   onClick={() => handleWeekSelect(week)}
-                  className={`px-4 py-2 rounded-2xl text-white ${
+                  className={`px-5 py-2 rounded-full text-white font-semibold transition ${
                     selectedWeek === week
-                      ? "bg-gradient-to-r from-blue-500 to-blue-700"
-                      : "bg-gray-400"
+                      ? "bg-gradient-to-r from-indigo-500 to-purple-500 shadow-md"
+                      : "bg-gray-300 hover:bg-gray-400"
                   }`}
                 >
-                  Week {week}
+                  {week} Week{week>1 ? "s" : ""}
                 </button>
               ))}
             </div>
 
-            {/* Dates */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-1  md:grid-cols-2 gap-4 mb-6">
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="px-4 py-3 rounded-2xl border border-gray-300"
+                className="px-4 py-3 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-100 transition"
               />
-
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="px-4 py-3 rounded-2xl border border-gray-300"
+                className="px-4 py-3 rounded-xl border border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-100 transition"
               />
             </div>
 
-            {/* Modal Add Button */}
             <button
               onClick={handleSprintCreate}
               disabled={loading}
-              className="w-full bg-gradient-to-r from-green-500 to-teal-500 text-white py-3 rounded-2xl mt-2 shadow-md"
+              className="w-full py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-bold shadow-lg hover:scale-105 transition"
             >
               {loading ? "Adding..." : "Add Sprint"}
             </button>
           </div>
         </div>
       )}
-      {/* ============== END MODAL ============== */}
 
       {/* Sprint List */}
-      <div className="space-y-3 mt-6 h-[65vh] overflow-y-auto">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
         {sprints.length === 0 && (
-          <p className="text-center text-gray-400 italic">
-            No sprints yet. Start by adding one!
+          <p className="text-gray-500 italic col-span-full text-center">
+            No sprints yet. Create your first one!
           </p>
         )}
 
         {sprints.map((s) => (
           <div
             key={s.id}
-            className="p-5 rounded-3xl bg-white shadow-md flex justify-between"
+            className="relative bg-white p-3 rounded-3xl  shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1 flex flex-col justify-between"
           >
-            <p className="text-lg font-bold">{s.name}</p>
+            <div>
+              <p className=" text-gray-900">{s.name}</p>
+              <p className="text-gray-500 mt-2">{s.goal}</p>
+            </div>
+            <div className=" flex justify-between items-center text-gray-400 text-xs">
+              <span>
+                {new Date(s.start_date).toLocaleDateString()} -{" "}
+                {new Date(s.end_date).toLocaleDateString()}
+              </span>
+              <span className="px-3 py-1 rounded-full  bg-gradient-to-r from-green-400 to-teal-500 text-white shadow">
+                Start Sprint
+              </span>
+            </div>
+
+            {/* Optional floating icon */}
+            <div className="absolute top-5 right-5 text-indigo-500">
+              <Eye size={15}/>
+            </div>
           </div>
         ))}
       </div>
