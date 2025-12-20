@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus } from "lucide-react";
+import { EllipsisVertical, Plus } from "lucide-react";
 
 const Epic = ({ onCreate, epics, selectedEpic, onSelectEpic }) => {
   const [name, setName] = useState("");
@@ -62,10 +62,15 @@ const Epic = ({ onCreate, epics, selectedEpic, onSelectEpic }) => {
                   : "bg-gray-50"
               }`}
           >
-            <h4 className="font-medium">{epic.name}</h4>
-            <p className="text-sm text-gray-600">
-              {epic.description}
-            </p>
+            <div className="flex justify-between items-center">
+              <div>
+                <h4 className="font-medium">{epic.name}</h4>
+                <p className="text-sm text-gray-600">{epic.description}</p>
+              </div>
+              <button>
+                <EllipsisVertical size={15} />
+              </button>
+            </div>
           </div>
         ))}
       </div>

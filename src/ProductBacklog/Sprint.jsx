@@ -39,12 +39,8 @@ const Sprint = ({ onCreated }) => {
       project_id: project._id,
       name: form.name,
       goal: form.goal,
-      start_date: new Date(form.start_date)
-        .toISOString()
-        .split(".")[0],
-      end_date: new Date(form.end_date)
-        .toISOString()
-        .split(".")[0],
+      start_date: new Date(form.start_date).toISOString().split(".")[0],
+      end_date: new Date(form.end_date).toISOString().split(".")[0],
     };
 
     try {
@@ -58,8 +54,10 @@ const Sprint = ({ onCreated }) => {
   };
 
   return (
-    <div className="bg-zinc-900 p-5 rounded-xl text-white max-w-md">
-      <h2 className="text-xl font-semibold mb-4">Create Sprint</h2>
+    <div className="bg-zinc-900 shadow-lg p-6 rounded-2xl max-w-md mx-auto border border-zinc-700">
+      <h2 className="text-2xl font-bold mb-5 text-orange-400 text-center">
+        Create New Sprint
+      </h2>
 
       <input
         type="text"
@@ -67,7 +65,7 @@ const Sprint = ({ onCreated }) => {
         placeholder="Sprint Name"
         value={form.name}
         onChange={handleChange}
-        className="w-full p-2 mb-3 rounded bg-zinc-800"
+        className="w-full p-3 mb-4 rounded-xl bg-zinc-800 border border-zinc-700 focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition"
       />
 
       <textarea
@@ -75,43 +73,53 @@ const Sprint = ({ onCreated }) => {
         placeholder="Sprint Goal"
         value={form.goal}
         onChange={handleChange}
-        className="w-full p-2 mb-3 rounded bg-zinc-800"
+        className="w-full p-3 mb-4 rounded-xl bg-zinc-800 border border-zinc-700 focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition"
+        rows={3}
       />
 
-      <div className="flex gap-2 mb-4">
-        <button onClick={() => setDuration(7)} className="px-3 py-1 bg-blue-600 rounded">
+      <div className="flex justify-between gap-2 mb-4">
+        <button
+          onClick={() => setDuration(7)}
+          className="flex-1 py-2 bg-gradient-to-r from-blue-500 to-blue-700 rounded-xl font-semibold hover:scale-105 transform transition"
+        >
           Week 1
         </button>
-        <button onClick={() => setDuration(14)} className="px-3 py-1 bg-green-600 rounded">
+        <button
+          onClick={() => setDuration(14)}
+          className="flex-1 py-2 bg-gradient-to-r from-green-500 to-green-700 rounded-xl font-semibold hover:scale-105 transform transition"
+        >
           Week 2
         </button>
-        <button onClick={() => setDuration(28)} className="px-3 py-1 bg-purple-600 rounded">
+        <button
+          onClick={() => setDuration(28)}
+          className="flex-1 py-2 bg-gradient-to-r from-purple-500 to-purple-700 rounded-xl font-semibold hover:scale-105 transform transition"
+        >
           Week 4
         </button>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-5">
         <input
           type="date"
           name="start_date"
           value={form.start_date}
           onChange={handleChange}
-          className="w-1/2 p-2 rounded bg-zinc-800"
+          className="flex-1 p-3 rounded-xl bg-zinc-800 border border-zinc-700 focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition"
         />
         <input
           type="date"
           name="end_date"
           value={form.end_date}
           onChange={handleChange}
-          className="w-1/2 p-2 rounded bg-zinc-800"
+          className="flex-1 p-3 rounded-xl bg-zinc-800 border border-zinc-700 focus:border-orange-400 focus:ring-1 focus:ring-orange-400 transition"
         />
       </div>
 
       <button
         onClick={handleCreate}
-        className="w-full bg-orange-600 py-2 rounded font-semibold"
+        className="w-full py-3 bg-gradient-to-r from-orange-500 to-orange-700 rounded-2xl font-bold text-white hover:scale-105 transform transition shadow-lg"
       >
-        Create Sprint
+        Create Sprint 🚀
       </button>
     </div>
   );

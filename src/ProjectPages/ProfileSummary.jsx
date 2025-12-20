@@ -1,136 +1,216 @@
 import React, { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { Trash2, MessageSquarePlus, X } from "lucide-react";
-import { getProjectComments, ProjectComments } from "../API/ProjectAPI";
+import { getProjectReport } from "../API/ProjectAPI";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
-const ProjectSummary = () => {
+/* ===== UNIQUE PREMIUM COLORS ===== */
+const COLORS = [
+  "#EF4444", // Highest - Red
+  "#F97316", // High - Orange
+  "#FACC15", // Medium - Yellow
+  "#22C55E", // Low - Green
+  "#38BDF8", // Lowest - Blue
+];
+
+const ProjectReportSummary = () => {
   const { project } = useOutletContext();
+  const [report, setReport] = useState(null);
 
-  const [comments, setComments] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [newComment, setNewComment] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  // Load comments
   useEffect(() => {
-    fetchComments();
+    if (project?.id) fetchReport();
   }, [project?.id]);
 
-  const fetchComments = async () => {
+  const fetchReport = async () => {
     try {
-      const res = await getProjectComments(project.id);
-      setComments(res || []);
+      const res = await getProjectReport(project.id);
+      setReport(res);
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Add comment
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return;
+  if (!report) return <p className="text-sm">Loading report...</p>;
 
-    try {
-      setLoading(true);
-      await ProjectComments(project.id, newComment);
-      setNewComment("");
-      setShowModal(false);
-      fetchComments();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  /* ================= WORK ITEM STATUS ================= */
+  const workStatusData = report.work_items_status.breakdown
+    .filter((b) => b.status.toLowerCase() !== "backlog")
+    .map((b) => ({
+      name: b.status.replace("_", " "),
+      value: b.count,
+    }));
+
+  const typeOfWorkData = report.types_of_work.map((t) => ({
+    name: t.type,
+    value: t.count,
+  }));
+
+  /* ================= 🔥 PRIORITY DATA ================= */
+  const priorityData = Object.entries(
+    report.issues_breakdown_by_priority
+  ).map(([key, value]) => ({
+    name: key.toLowerCase(),
+    value,
+  }));
 
   return (
-    <section className="space-y-8">
-      {/* ================= Project Card ================= */}
-      <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white/80 backdrop-blur-sm shadow-sm">
-        <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-blue-600 to-purple-600" />
-        <div className="px-8 py-7">
-          <div className="mb-6">
-            <p className="text-[11px] uppercase tracking-widest text-gray-500 mb-1">Project Name</p>
-            <p className="text-2xl font-semibold capitalize text-gray-900">{project.name}</p>
-          </div>
-          <div className="h-px bg-gray-200 my-6" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <p className="text-[11px] uppercase tracking-widest text-gray-500 mb-1">Project Key</p>
-              <p className="font-mono text-sm uppercase">{project.key}</p>
-            </div>
-            <div className="md:col-span-2">
-              <p className="text-[11px] uppercase tracking-widest text-gray-500 mb-1">Description</p>
-              <p className="text-gray-700">{project.description || "No description provided"}</p>
-            </div>
-          </div>
-        </div>
+    <section className="space-y-5">
+      {/* ================= PROJECT INFO ================= */}
+      <div className="bg-gray-100 rounded-xl p-4  shadow-sm">
+        <p className="text-[10px] uppercase  text-gray-500 mb-1">
+          Project Name
+        </p>
+        <p className="text-lg font-semibold mb-3">
+         {report.project_summary.name}
+        </p>
+        <p>
+          <p className="text-[10px] uppercase  text-gray-500 mb-1">Description</p>
+          <p className="capitalize text-sm">{project.description}</p>
+        </p>
       </div>
 
-      {/* ================= Comments Section ================= */}
-      <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white/80 backdrop-blur-sm shadow-sm">
-        <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-blue-600 to-cyan-400" />
-        <div className="px-8 py-7">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Comments</h3>
-            <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-            >
-              <MessageSquarePlus size={16} />
-              Add Comment
-            </button>
-          </div>
-
-          <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent my-4" />
-
-          {/* Comments List */}
-          {comments.length === 0 ? (
-            <p className="text-sm text-gray-500">No comments yet</p>
-          ) : (
-            <ul className="space-y-4">
-              {comments.map((c) => (
-                <li key={c.id} className="flex justify-between gap-4 bg-gray-50 rounded-xl p-4">
-                  <div className="text-gray-800 text-sm leading-relaxed">
-                    <p>{c.comment}</p>
-                    <p className="text-blue-600">{c.author_name}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+      {/* ================= TOP SUMMARY ================= */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card title="Completion">
+          {report.project_summary.completion_percentage}%
+        </Card>
+        <Card title="Total Task">
+          {report.work_items_status.total}
+        </Card>
+        <Card title="Project Lead">
+          {report.project_summary.lead}
+        </Card>
       </div>
 
-      {/* ================= Modal ================= */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 relative">
-            <button
-              onClick={() => setShowModal(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-            >
-              <X size={20} />
-            </button>
-            <h3 className="text-lg font-semibold mb-4">Add Comment</h3>
-            <textarea
-              rows="4"
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Write your comment..."
-              className="w-full rounded-xl border p-3 focus:ring-2 focus:ring-blue-500 outline-none mb-4"
-            />
-            <button
-              onClick={handleAddComment}
-              disabled={loading}
-              className="w-full px-5 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
-            >
-              {loading ? "Adding..." : "Submit"}
-            </button>
-          </div>
+      {/* ================= PIE CHART SECTION ================= */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <ChartCard title="Work Items Status">
+          <PieChartBlock data={workStatusData} />
+        </ChartCard>
+
+        <ChartCard title="Types of Work">
+          <PieChartBlock data={typeOfWorkData} />
+        </ChartCard>
+
+        {/* 🔥 PRIORITY CHART */}
+        <ChartCard title="Priority Breakdown">
+          <PieChartBlock data={priorityData} />
+        </ChartCard>
+      </div>
+
+      {/* ================= EPICS PROGRESS ================= */}
+      <div className="bg-gray-100 rounded-xl p-4 shadow-sm">
+        <h3 className="text-sm font-semibold mb-2">Epics Progress</h3>
+        <div className="space-y-2 overflow-y-auto h-30">
+          {report.epics_progress.map((epic) => (
+            <div key={epic.id}>
+              <div className="flex justify-between text-xs mb-1">
+                <span>{epic.name}</span>
+                <span>{epic.progress}%</span>
+              </div>
+              <div className="h-1.5 bg-gray-200 rounded-full">
+                <div
+                  className="h-1.5 bg-blue-600 rounded-full"
+                  style={{ width: `${epic.progress}%` }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
     </section>
   );
 };
 
-export default ProjectSummary;
+export default ProjectReportSummary;
+
+/* ================= SMALL UI COMPONENTS ================= */
+
+const Card = ({ title, children }) => (
+  <div className="bg-gray-100 rounded-xl shadow-sm p-4">
+    <p className="text-[10px] capitalize text-gray-500 mb-1">{title}</p>
+    <p className="text-lg font-semibold">{children}</p>
+  </div>
+);
+
+const ChartCard = ({ title, children }) => (
+  <div className="bg-gray-100 rounded-xl shadow-sm p-4">
+    <h3 className="text-sm font-semibold mb-2">{title}</h3>
+    {children}
+  </div>
+);
+
+/* ================= DONUT CHART ================= */
+
+const PieChartBlock = ({ data }) => {
+  const total = data.reduce((s, d) => s + d.value, 0);
+
+  return (
+    <div className="flex items-center gap-4">
+      <div className="relative w-[160px] h-[160px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              outerRadius={60}
+              innerRadius={38}
+              stroke="none"
+            >
+              {data.map((_, i) => (
+                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              ))}
+            </Pie>
+
+            <Tooltip
+              content={({ active, payload }) => {
+                if (active && payload?.length) {
+                  const value = payload[0].value;
+                  const percent = ((value / total) * 100).toFixed(1);
+                  return (
+                    <div className="bg-white px-3 py-2 rounded shadow text-xs">
+                      <p className="font-semibold">
+                        {payload[0].name}
+                      </p>
+                      <p>{value} issues</p>
+                      <p className="text-gray-500">{percent}%</p>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+
+            <text
+              x="50%"
+              y="50%"
+              textAnchor="middle"
+              dominantBaseline="middle"
+              className="text-sm font-semibold fill-gray-800"
+            >
+              {total}
+            </text>
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="space-y-1 text-xs">
+        {data.map((d, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <span
+              className="w-3 h-3 rounded-sm"
+              style={{ backgroundColor: COLORS[i % COLORS.length] }}
+            />
+            <span>{d.name} : {d.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};

@@ -373,3 +373,12 @@ export const getIssueComments = async (issue_id) => {
   const res = await API.get(`/comments/?issue_id=${issue_id}`);
   return res.data;
 };
+
+
+// Project Report
+export const getProjectReport = async (project_id) => {
+  const res = await API.get(
+    `/projects/${project_id}/report`
+  );
+  return res.data;
+};
