@@ -25,6 +25,15 @@ const Backlog = ({
 
 const [sprints, setSprints] = useState([]);
 const { project } = useOutletContext();
+const [selectedIssues, setSelectedIssues] = useState([]);
+
+const toggleIssue = (id) => {
+  setSelectedIssues((prev) =>
+    prev.includes(id)
+      ? prev.filter((i) => i !== id)
+      : [...prev, id]
+  );
+};
 
   const fetchSprints = async () => {
     if (!project?.id) return;

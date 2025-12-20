@@ -45,10 +45,18 @@ const ProjectReportSummary = () => {
       value: b.count,
     }));
 
-  const typeOfWorkData = report.types_of_work.map((t) => ({
+const typeOfWorkData = report.types_of_work
+  .filter(
+    (t) => {
+      const type = t.type.toLowerCase().replace("-", "").replace("_", "");
+      return !["subtask", "feature"].includes(type);
+    }
+  )
+  .map((t) => ({
     name: t.type,
     value: t.count,
   }));
+
 
   /* ================= 🔥 PRIORITY DATA ================= */
   const priorityData = Object.entries(
@@ -61,16 +69,19 @@ const ProjectReportSummary = () => {
   return (
     <section className="space-y-5">
       {/* ================= PROJECT INFO ================= */}
-      <div className="bg-gray-100 rounded-xl p-4  shadow-sm">
-        <p className="text-[10px] uppercase  text-gray-500 mb-1">
+      <div className="bg-gray-100 rounded-xl p-4 shadow-sm">
+        <p className="text-[10px] uppercase text-gray-500 mb-1">
           Project Name
         </p>
         <p className="text-lg font-semibold mb-3">
-         {report.project_summary.name}
+          {report.project_summary.name}
         </p>
-        <p>
-          <p className="text-[10px] uppercase  text-gray-500 mb-1">Description</p>
-          <p className="capitalize text-sm">{project.description}</p>
+
+        <p className="text-[10px] uppercase text-gray-500 mb-1">
+          Description
+        </p>
+        <p className="capitalize text-sm">
+          {project.description}
         </p>
       </div>
 
@@ -97,7 +108,6 @@ const ProjectReportSummary = () => {
           <PieChartBlock data={typeOfWorkData} />
         </ChartCard>
 
-        {/* 🔥 PRIORITY CHART */}
         <ChartCard title="Priority Breakdown">
           <PieChartBlock data={priorityData} />
         </ChartCard>
@@ -105,7 +115,10 @@ const ProjectReportSummary = () => {
 
       {/* ================= EPICS PROGRESS ================= */}
       <div className="bg-gray-100 rounded-xl p-4 shadow-sm">
-        <h3 className="text-sm font-semibold mb-2">Epics Progress</h3>
+        <h3 className="text-sm font-semibold mb-2">
+          Epics Progress
+        </h3>
+
         <div className="space-y-2 overflow-y-auto h-30">
           {report.epics_progress.map((epic) => (
             <div key={epic.id}>
@@ -133,7 +146,9 @@ export default ProjectReportSummary;
 
 const Card = ({ title, children }) => (
   <div className="bg-gray-100 rounded-xl shadow-sm p-4">
-    <p className="text-[10px] capitalize text-gray-500 mb-1">{title}</p>
+    <p className="text-[10px] capitalize text-gray-500 mb-1">
+      {title}
+    </p>
     <p className="text-lg font-semibold">{children}</p>
   </div>
 );
@@ -164,7 +179,10 @@ const PieChartBlock = ({ data }) => {
               stroke="none"
             >
               {data.map((_, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                <Cell
+                  key={i}
+                  fill={COLORS[i % COLORS.length]}
+                />
               ))}
             </Pie>
 
@@ -172,14 +190,20 @@ const PieChartBlock = ({ data }) => {
               content={({ active, payload }) => {
                 if (active && payload?.length) {
                   const value = payload[0].value;
-                  const percent = ((value / total) * 100).toFixed(1);
+                  const percent = (
+                    (value / total) *
+                    100
+                  ).toFixed(1);
+
                   return (
                     <div className="bg-white px-3 py-2 rounded shadow text-xs">
                       <p className="font-semibold">
                         {payload[0].name}
                       </p>
                       <p>{value} issues</p>
-                      <p className="text-gray-500">{percent}%</p>
+                      <p className="text-gray-500">
+                        {percent}%
+                      </p>
                     </div>
                   );
                 }
@@ -202,12 +226,20 @@ const PieChartBlock = ({ data }) => {
 
       <div className="space-y-1 text-xs">
         {data.map((d, i) => (
-          <div key={i} className="flex items-center gap-2">
+          <div
+            key={i}
+            className="flex items-center gap-2"
+          >
             <span
               className="w-3 h-3 rounded-sm"
-              style={{ backgroundColor: COLORS[i % COLORS.length] }}
+              style={{
+                backgroundColor:
+                  COLORS[i % COLORS.length],
+              }}
             />
-            <span>{d.name} : {d.value}</span>
+            <span>
+              {d.name} : {d.value}
+            </span>
           </div>
         ))}
       </div>

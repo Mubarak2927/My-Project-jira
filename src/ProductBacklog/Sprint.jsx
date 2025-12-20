@@ -16,6 +16,7 @@ export default function Sprint() {
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState(null);
+  
 
   // Fetch sprints
   const fetchSprints = async () => {
@@ -184,7 +185,7 @@ export default function Sprint() {
       {/* ============== END MODAL ============== */}
 
       {/* Sprint List */}
-      <div className="space-y-3 mt-6">
+      <div className="space-y-3 mt-6 h-[65vh] overflow-y-auto">
         {sprints.length === 0 && (
           <p className="text-center text-gray-400 italic">
             No sprints yet. Start by adding one!

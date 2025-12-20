@@ -51,7 +51,7 @@ const ProjectManagement = () => {
   const handleDelete = async (e, projectId) => {
     e.stopPropagation();
 
-    if (!window.confirm("Delete project?")) return;
+    if (!window.confirm("Do you want Delete this project?")) return;
 
     try {
       await deleteProject(projectId);
@@ -63,10 +63,10 @@ const ProjectManagement = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 bg-gray-200 mt-5 rounded-xl">
         <Toaster position="top-right"/>
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between  items-center mb-6">
         <h1 className="text-2xl font-semibold text-black">
           Projects
         </h1>
@@ -89,7 +89,7 @@ const ProjectManagement = () => {
 
       {/* TABLE */}
       {!loading && (
-        <div className="overflow-x-auto rounded-xl border border-gray-800">
+        <div className="overflow-x-auto rounded-xl h-[70vh] overflow-y-auto border border-gray-800">
           <table className="w-full border-collapse text-sm">
             <thead className="bg-gray-300">
               <tr>
@@ -104,7 +104,7 @@ const ProjectManagement = () => {
             <tbody>
               {projects.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="py-6 text-center text-gray-500">
+                  <td colSpan="5" className="py-6 text-center   text-gray-500">
                     No projects found
                   </td>
                 </tr>
@@ -144,7 +144,7 @@ const ProjectManagement = () => {
             </tbody>
           </table>
         </div>
-      )}
+       )} 
 
       {/* MODAL */}
       {modalOpen && (
