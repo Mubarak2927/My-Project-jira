@@ -18,7 +18,7 @@ const Epic = ({ onCreate, epics, selectedEpic, onSelectEpic }) => {
   };
 
   return (
-    <div className=" shadow-md/50 bg-gray-100 p-4 rounded-xl max-w-md h-[70vh] space-y-4">
+    <div className=" shadow-md/50 bg-gray-100 p-4 rounded-xl max-w-md h-[73vh] space-y-4">
       <div>
         <h2 className="text-lg font-semibold mb-3">Create Epic</h2>
 
@@ -55,10 +55,10 @@ const Epic = ({ onCreate, epics, selectedEpic, onSelectEpic }) => {
           <div
             key={epic._id}
             onClick={() => onSelectEpic(epic)}
-            className={`p-3 border rounded-lg cursor-pointer
+            className={`p-3  rounded-lg cursor-pointer
               ${
                 selectedEpic?._id === epic._id
-                  ? "bg-blue-100 border-blue-500"
+                  ? "shadow-md/30 bg-gray-300"
                   : "bg-gray-50"
               }`}
           >

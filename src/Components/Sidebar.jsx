@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import DigitalyLogo from '../assets/Digi.png';
 import {
   FolderKanban,
   CalendarPlus,
@@ -13,6 +14,7 @@ import {
   ChevronsRight,
   ChevronsLeft,
 } from "lucide-react";
+
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -47,7 +49,7 @@ const isProjectManagementActive =
         <div className="flex justify-end p-3">
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="text-gray-400 hover:text-white"
+            className="text-gray-400 hover:text-white cursor-pointer"
           >
             {collapsed ? <ChevronsRight /> : <ChevronsLeft />}
           </button>
@@ -55,8 +57,8 @@ const isProjectManagementActive =
 
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 mb-6">
-          <div className="bg-gradient-to-br from-blue-500 to-purple-500 w-10 h-10 rounded-xl flex items-center justify-center">
-            <span className="text-white font-bold">D</span>
+          <div className=" w-10 h-10 rounded-xl flex items-center justify-center">
+            <img src={DigitalyLogo} alt="" />
           </div>
           {!collapsed && (
             <h1 className="text-xl font-semibold text-white">
