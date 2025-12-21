@@ -1,24 +1,46 @@
-import React, { useState } from "react";
+import axios from "axios";
+import { Trash2 } from "lucide-react";
+import React, { useRef, useState } from "react";
 
-const ProjectModal = ({ setModalOpen, onSubmit }) => {
+
+const ProjectModal = ({ setModalOpen, onSubmit ,handleBulkUpload}) => {
   const [projectName, setProjectName] = useState("");
   const [projectKey, setProjectKey] = useState("");
   const [description, setDescription] = useState("");
+  const [startDate, setStartDate] = useState("");
+const [endDate, setEndDate] = useState("");
+
   const [loading, setLoading] = useState(false);
+   const [file, setFile] = useState(null);
+  const fileInputRef = useRef(null);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    onSubmit(
-      {
-        name: projectName,
-        key: projectKey,
-        description,
-      },
-      setLoading
-    );
+  const handleRemoveFile = () => {
+    setFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
+ 
+
+ const handleSubmit = (e) => {
+  e.preventDefault();
+
+  onSubmit(
+  {
+    name: projectName,
+    key: projectKey,
+    description,
+   start_date: startDate ? `${startDate}T00:00:00` : null,
+end_date: endDate ? `${endDate}T23:59:59` : null,
+
+  },
+  setLoading
+);
+
+};
+
+  
   return (
     <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center">
       <div className="relative bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl">
@@ -55,6 +77,25 @@ const ProjectModal = ({ setModalOpen, onSubmit }) => {
             placeholder="Description"
             className="w-full border p-2 rounded-lg"
           />
+          <div className="grid grid-cols-2 gap-3">
+  <input
+    type="date"
+    value={startDate}
+    onChange={(e) => setStartDate(e.target.value)}
+    required
+    className="w-full border p-2 rounded-lg"
+  />
+
+  <input
+    type="date"
+    value={endDate}
+    onChange={(e) => setEndDate(e.target.value)}
+    required
+    className="w-full border p-2 rounded-lg"
+  />
+</div>
+
+          
 
           <div className="flex justify-end gap-2">
             <button

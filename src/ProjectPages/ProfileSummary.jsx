@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { getProjectReport } from "../API/ProjectAPI";
+import { getProjectReport } from "../API/projectAPI";
 import {
   PieChart,
   Pie,
@@ -73,15 +73,8 @@ const typeOfWorkData = report.types_of_work
         <p className="text-[10px] uppercase text-gray-500 mb-1">
           Project Name
         </p>
-        <p className="text-lg font-semibold mb-3">
+        <p className="text-lg font-semibold">
           {report.project_summary.name}
-        </p>
-
-        <p className="text-[10px] uppercase text-gray-500 mb-1">
-          Description
-        </p>
-        <p className="capitalize text-sm">
-          {project.description}
         </p>
       </div>
 
@@ -93,8 +86,8 @@ const typeOfWorkData = report.types_of_work
         <Card title="Total Task">
           {report.work_items_status.total}
         </Card>
-        <Card title="Project Lead">
-          {report.project_summary.lead}
+        <Card title="Description">
+          {project.description}
         </Card>
       </div>
 

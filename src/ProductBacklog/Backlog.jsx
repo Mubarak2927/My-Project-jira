@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { CheckSquare, BookOpen, Bug } from "lucide-react";
+import { CheckSquare, BookOpen, Bug, Plus } from "lucide-react";
 import { getSprint, sprintTaskMove } from "../API/projectAPI";
 import { useOutletContext } from "react-router";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 
 const Backlog = ({
   epics = [],
@@ -12,10 +12,21 @@ const Backlog = ({
   setForm,
   handleAdd,
   loading,
+  handleAssignSprint,
+  setSelectedIssues,
+  selectedIssues
 }) => {
-  const filteredIssues = selectedEpic
-    ? issues.filter((issue) => issue.epic_id === selectedEpic.id)
-    : issues;
+  const filteredIssues = issues.filter((issue) => {
+  // 🔥 Sprint assign pannina task backlog la varakoodathu
+  if (issue.sprint_id) return false;
+
+  // 🔥 Epic filter
+  if (selectedEpic) {
+    return issue.epic_id === selectedEpic.id;
+  }
+
+  return true;
+});
 
   const storyPointsOptions = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
 
@@ -28,7 +39,6 @@ const Backlog = ({
   /* ===================== STATE ===================== */
   const [sprints, setSprints] = useState([]);
   const { project } = useOutletContext();
-  const [selectedIssues, setSelectedIssues] = useState([]);
 
   /* ===================== TOGGLE ISSUE ===================== */
   const toggleIssue = (id) => {
@@ -62,31 +72,7 @@ const Backlog = ({
   };
 
   /* ===================== ASSIGN SPRINT ===================== */
- const handleAssignSprint = async () => {
-  if (!form.sprintId) {
-    return alert("Please select a sprint");
-  }
 
-  if (!selectedIssues || selectedIssues.length === 0) {
-    return alert("Please select at least one task");
-  }
-
-  try {
-    await sprintTaskMove(
-      form.sprintId,                 // ✅ sprintId ONLY
-      { issue_ids: selectedIssues }  // ✅ payload ONLY
-    );
-
-    toast.success("Tasks assigned to sprint successfully");
-
-    setSelectedIssues([]);
-    setForm({ ...form, sprintId: "" });
-    fetchSprints();
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to assign sprint");
-  }
-};
 
 
   const getEpicName = (epicId) => {
@@ -182,9 +168,9 @@ const Backlog = ({
         <button
           onClick={handleAdd}
           disabled={loading}
-          className="bg-green-500 text-white px-4 rounded"
+          className="bg-white hover:bg-gray-200 flex items-center gap-1 cursor-pointer hover:scale-102 transition shadow-md/20 text-green-600 px-4 rounded"
         >
-          {loading ? "Adding" : "Add"}
+          <Plus size={15}/>{loading ? "Adding" : "Add Task"}
         </button>
       </div>
 

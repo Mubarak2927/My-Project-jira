@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, Outlet, useParams } from "react-router-dom";
-import { getAllProjects } from "../API/ProjectAPI";
+import { getAllProjects } from "../API/projectAPI";
 
 const ProjectLayout = () => {
   const { projectId } = useParams();

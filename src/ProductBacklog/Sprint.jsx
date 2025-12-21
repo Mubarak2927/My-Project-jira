@@ -2,7 +2,12 @@ import { Eye, Plus, X } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useOutletContext } from "react-router-dom";
-import { getSprint, createSprint, getIssues } from "../API/projectAPI";
+import {
+  getSprint,
+  createSprint,
+  getIssues,
+  startSprints,
+} from "../API/projectAPI";
 
 export default function Sprint() {
   const { project } = useOutletContext();
@@ -20,6 +25,9 @@ export default function Sprint() {
   /* 🔥 NEW STATES (ADDED – NOT BREAKING OLD CODE) */
   const [selectedSprint, setSelectedSprint] = useState(null);
   const [sprintIssues, setSprintIssues] = useState([]);
+  /* 🔥 START SPRINT STATE */
+  const [startingSprint, setStartingSprint] = useState(false);
+  const [allIssues, setAllIssues] = useState([]);
 
   /* ================= FETCH SPRINTS ================= */
   const fetchSprints = async () => {
@@ -109,6 +117,32 @@ export default function Sprint() {
     setSelectedWeek(week);
   };
 
+  const handleStartSprint = async () => {
+    if (!selectedSprint) return;
+
+    if (sprintIssues.length === 0) {
+      toast.error("Add at least one issue to start sprint");
+      return;
+    }
+
+    try {
+      setStartingSprint(true);
+
+      // 🔥 Call API to move sprint issues to board
+      await startSprints(selectedSprint.id, sprintIssues);
+
+      toast.success(`Sprint "${selectedSprint.name}" started 🚀`);
+
+      // Optional: refresh board after starting sprint
+      // You can either use context, Redux, or a function passed from JiraBoard to reload
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to start sprint");
+    } finally {
+      setStartingSprint(false);
+    }
+  };
+
   return (
     <div className="p-6 bg-gray-200 h-[75vh] overflow-y-auto">
       <Toaster position="top-right" />
@@ -126,7 +160,7 @@ export default function Sprint() {
 
       {/* ================= MODAL ================= */}
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40">
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 relative">
             <button
               onClick={() => setShowModal(false)}
@@ -135,9 +169,7 @@ export default function Sprint() {
               <X size={22} />
             </button>
 
-            <h2 className="text-2xl  mb-6 text-center">
-              Create New Sprint
-            </h2>
+            <h2 className="text-2xl  mb-6 text-center">Create New Sprint</h2>
 
             <div className="grid gap-4 mb-5">
               <input
@@ -156,26 +188,24 @@ export default function Sprint() {
               />
             </div>
 
-            
-
             <div className="flex gap-5">
               <div className="flex flex-col w-fit">
-                 <label htmlFor="">Start Date</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="px-4 py-3 rounded-xl border"
-              />
+                <label htmlFor="">Start Date</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="px-4 py-3 rounded-xl border"
+                />
               </div>
               <div className="flex flex-col w-fit">
                 <label htmlFor="">End Date</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="px-4 py-3 rounded-xl border"
-              />
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="px-4 py-3 rounded-xl border"
+                />
               </div>
             </div>
             <div className="flex justify-center gap-3 mt-5">
@@ -207,29 +237,45 @@ export default function Sprint() {
 
       {/* ================= SPRINT LIST ================= */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
-        {sprints.map((s) => (
-          <div
-            key={s.id}
-            onClick={() => {
-              setSelectedSprint(s);
-              fetchSprintIssues(s.id);
-            }}
-            className={`cursor-pointer relative bg-white p-4 rounded-3xl shadow-lg ${
-              selectedSprint?.id === s.id ? "ring-2 ring-indigo-500" : ""
-            }`}
-          >
-            <p className="font-semibold">{s.name}</p>
-            <p className="text-gray-500 mt-1">{s.goal}</p>
+        {sprints.map((s) => {
+          const isSelected = selectedSprint?.id === s.id;
+          return (
+            <div
+              key={s.id}
+              onClick={() => {
+                setSelectedSprint(s);
+                fetchSprintIssues(s.id);
+              }}
+              className={`cursor-pointer relative bg-white p-4 rounded-3xl shadow-lg ${
+                isSelected ? "ring-2 ring-indigo-500" : ""
+              }`}
+            >
+              <p className="font-semibold">{s.name}</p>
+              <p className="text-gray-500 mt-1">{s.goal}</p>
 
-            <div className="flex justify-between items-center text-xs mt-4">
-              <span>
-                {new Date(s.start_date).toLocaleDateString()} -{" "}
-                {new Date(s.end_date).toLocaleDateString()}
-              </span>
-              <Eye size={14} />
+              {/* ✅ Only show start button if this sprint is selected */}
+              {isSelected && sprintIssues.length > 0 && (
+                <div className="flex justify-end mb-4">
+                  <button
+                    onClick={handleStartSprint}
+                    disabled={startingSprint}
+                    className="px-6 py-3 bg-green-600 text-white rounded-full hover:scale-105 transition cursor-pointer"
+                  >
+                    {startingSprint ? "Starting..." : "Start Sprint"}
+                  </button>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center text-xs mt-4">
+                <span>
+                  {new Date(s.start_date).toLocaleDateString()} -{" "}
+                  {new Date(s.end_date).toLocaleDateString()}
+                </span>
+                <Eye size={14} />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* ================= SPRINT TASKS ================= */}
@@ -244,10 +290,7 @@ export default function Sprint() {
           ) : (
             <div className="space-y-3">
               {sprintIssues.map((issue) => (
-                <div
-                  key={issue.id}
-                  className="bg-white p-3 rounded-xl shadow"
-                >
+                <div key={issue.id} className="bg-white p-3 rounded-xl shadow">
                   <p className="font-semibold">{issue.name}</p>
                   <p className="text-xs text-gray-500 capitalize">
                     {issue.type} • {issue.priority}

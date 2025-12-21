@@ -37,6 +37,7 @@ const ProjectManagement = () => {
     try {
       setLoading(true);
       await createProject(formData);
+      fetchProjects();
       toast.success("Project Created Successfully");
       setModalOpen(false);
       fetchProjects();
@@ -90,7 +91,7 @@ const ProjectManagement = () => {
 
       {/* TABLE */}
       {!loading && (
-        <div className="overflow-x-auto rounded-xl h-[63vh] overflow-y-auto border border-gray-800">
+        <div className=" rounded-xl  border ">
           <table className="w-full border-collapse text-sm">
             <thead className="bg-gray-300">
               <tr>
