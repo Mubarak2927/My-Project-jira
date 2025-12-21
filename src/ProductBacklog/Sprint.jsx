@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { useOutletContext } from "react-router-dom";
 import { getSprint, createSprint } from "../API/ProjectAPI";
+import { fetchIssuesbySprintId } from "../API/ProjectAPI";
+
 
 export default function Sprint() {
   const { project } = useOutletContext();
@@ -16,6 +18,22 @@ export default function Sprint() {
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState(null);
+  const [activeSprint, setActiveSprint] = useState(null);
+const [sprintIssues, setSprintIssues] = useState([]);
+
+
+const handleSprintClick = async (sprint) => {
+  setActiveSprint(sprint);
+  try {
+    const res = await fetchIssuesbySprintId(sprint.id);
+
+    // ⚠️ backend usually sends like this
+    setSprintIssues(res.issues || []);
+  } catch (err) {
+    console.error(err);
+    toast.error("Unable to load sprint tasks");
+  }
+};
 
   const fetchSprints = async () => {
     if (!projectId) return;
@@ -172,9 +190,37 @@ export default function Sprint() {
 
         {sprints.map((s) => (
           <div
-            key={s.id}
-            className="relative bg-white p-3 rounded-3xl  shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1 flex flex-col justify-between"
+  key={s.id}
+  onClick={() => handleSprintClick(s)}
+  className="cursor-pointer relative bg-white p-3 rounded-3xl shadow-lg hover:shadow-2xl transition"
+>
+  {activeSprint && (
+  <div className="mt-10 bg-white rounded-2xl p-5 shadow">
+    <h2 className="text-xl font-bold mb-4">
+      {activeSprint.name} – Tasks
+    </h2>
+
+    {sprintIssues.length === 0 ? (
+      <p className="text-gray-400">No tasks assigned</p>
+    ) : (
+      <div className="space-y-3">
+        {sprintIssues.map((issue) => (
+          <div
+            key={issue.id}
+            className="flex justify-between items-center p-3 bg-gray-100 rounded-xl"
           >
+            <span className="font-medium">{issue.name}</span>
+            <span className="text-xs text-gray-500 capitalize">
+              {issue.type}
+            </span>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
+
+
             <div>
               <p className=" text-gray-900">{s.name}</p>
               <p className="text-gray-500 mt-2">{s.goal}</p>
@@ -194,7 +240,9 @@ export default function Sprint() {
               <Eye size={15}/>
             </div>
           </div>
+          
         ))}
+        
       </div>
     </div>
   );

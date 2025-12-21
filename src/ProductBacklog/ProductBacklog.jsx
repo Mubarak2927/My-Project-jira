@@ -72,15 +72,16 @@ const ProductBacklog = () => {
 
     setLoading(true);
     try {
-      await createIssues({
+      const res=await createIssues({
         project_id: project.id,
         name: form.title,
         description: form.description,
         type: form.type.toLowerCase(),
         priority: form.priority.toLowerCase(),
-        epicId: form.epicId || undefined,
+       epic_id: form.epicId || null, 
         story_points: form.type === "story" ? form.storyPoints : null,
       });
+      console.log('create task' ,res)
       toast.success("Task Created Successfully");
 
 

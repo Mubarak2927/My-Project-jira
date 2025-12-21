@@ -51,21 +51,23 @@ const Epic = ({ onCreate, epics, selectedEpic, onSelectEpic }) => {
           <p className="text-sm text-gray-500">No epics yet</p>
         )}
 
-        {epics.map((epic) => (
-          <div
-            key={epic._id}
-            onClick={() => onSelectEpic(epic)}
-            className={`p-3  rounded-lg cursor-pointer
-              ${
-                selectedEpic?._id === epic._id
-                  ? "shadow-md/30 bg-gray-300"
-                  : "bg-gray-50"
-              }`}
-          >
+       {epics.map((epic) => (
+  <div
+    key={epic.id} // ✅ FIX
+    onClick={() => onSelectEpic(epic)} // keep full object
+    className={`p-3 rounded-lg cursor-pointer
+      ${
+        selectedEpic?.id === epic.id // ✅ FIX
+          ? "shadow-md/30 bg-gray-300"
+          : "bg-gray-50"
+      }`}
+  >
+
             <div className="flex justify-between items-center">
               <div>
                 <h4 className="font-medium">{epic.name}</h4>
                 <p className="text-sm text-gray-600">{epic.description}</p>
+                
               </div>
               <button>
                 <EllipsisVertical size={15} />
