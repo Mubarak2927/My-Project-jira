@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import Epic from "./Epic";
-import { createEpic, getEpic, getIssues, createIssues } from "../API/ProjectAPI";
+import { createEpic, getEpic, getIssues, createIssues } from "../API/projectAPI";
 import toast, { Toaster } from "react-hot-toast";
 import Backlog from "./Backlog";
 
@@ -11,9 +11,9 @@ const ProductBacklog = () => {
   const [epics, setEpics] = useState([]);
   const [selectedEpic, setSelectedEpic] = useState(null);
 
-  // ⚡ Backlog state
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(false);
+
   const [form, setForm] = useState({
     type: "task",
     title: "",
@@ -21,9 +21,10 @@ const ProductBacklog = () => {
     epicId: "",
     priority: "",
     storyPoints: "",
+    sprintId: "",
   });
 
-  // Load epics
+  /* ================= LOAD EPICS ================= */
   useEffect(() => {
     if (project?.id) loadEpics();
   }, [project]);
@@ -37,7 +38,7 @@ const ProductBacklog = () => {
     }
   };
 
-  // Load issues
+  /* ================= LOAD ISSUES ================= */
   useEffect(() => {
     if (project?.id) fetchIssues();
   }, [project]);
@@ -51,7 +52,7 @@ const ProductBacklog = () => {
     }
   };
 
-  // Handle epic creation
+  /* ================= CREATE EPIC ================= */
   const handleEpicCreate = async (epicData) => {
     try {
       const payload = {
@@ -66,32 +67,32 @@ const ProductBacklog = () => {
     }
   };
 
-  // Handle adding issue
+  /* ================= CREATE ISSUE ================= */
   const handleAdd = async () => {
     if (!form.title) return alert("Title required");
 
     setLoading(true);
     try {
-      const res=await createIssues({
+      await createIssues({
         project_id: project.id,
         name: form.title,
         description: form.description,
         type: form.type.toLowerCase(),
         priority: form.priority.toLowerCase(),
-       epic_id: form.epicId || null, 
+        epic_id: form.epicId || null,
         story_points: form.type === "story" ? form.storyPoints : null,
       });
-      console.log('create task' ,res)
-      toast.success("Task Created Successfully");
 
+      toast.success("Task Created Successfully");
 
       setForm({
         type: "task",
         title: "",
         description: "",
-        epicId: "",
+        epicId: selectedEpic?.id || "",
         priority: "",
         storyPoints: "",
+        sprintId: "",
       });
 
       fetchIssues();
@@ -104,20 +105,23 @@ const ProductBacklog = () => {
 
   return (
     <>
-      <div>
-        <Toaster position="top-right" />
-      </div>
+      <Toaster position="top-right" />
 
-      <div className="space-y-6 flex gap-6">
+      <div className="flex gap-6">
         <Epic
           epics={epics}
-          onCreate={handleEpicCreate}
           selectedEpic={selectedEpic}
-          onSelectEpic={setSelectedEpic}
+          onCreate={handleEpicCreate}
+          onSelectEpic={(epic) => {
+            setSelectedEpic(epic);
+            setForm((prev) => ({
+              ...prev,
+              epicId: epic?.id || "",
+            }));
+          }}
         />
 
         <Backlog
-          projectId={project?.id}
           epics={epics}
           selectedEpic={selectedEpic}
           issues={issues}

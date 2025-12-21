@@ -97,7 +97,7 @@
   };
 
   //  Get Board by ID
-  export const getBoardById = async (board_id) => {
+  export const getBoardByProjectId  = async (board_id) => {
     const res = await API.get(`/boards/?project_id=${board_id}`);
     return res.data;
   };

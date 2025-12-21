@@ -1,40 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { Bug, BookOpen, CheckSquare } from "lucide-react";
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-} from "@hello-pangea/dnd";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { getBoardByProjectId, sprintTaskMoveColumn } from "../API/projectAPI";
 
-
-const columns = [
-  { key: "todo", title: "To Do" },
-  { key: "progress", title: "In Progress" },
-  { key: "review", title: "In Review" },
-  { key: "done", title: "Done" },
-];
-
-const initialIssues = [
-  {
-    id: "1",
-    title: "Login page UI",
-    type: "task",
-    status: "todo",
-  },
-  {
-    id: "2",
-    title: "Fix API bug",
-    type: "bug",
-    status: "progress",
-  },
-  {
-    id: "3",
-    title: "Sprint documentation",
-    type: "story",
-    status: "review",
-  },
-];
-
+/* ---------- ICON ---------- */
 const getIcon = (type) => {
   if (type === "bug") return <Bug className="text-red-500 w-4 h-4" />;
   if (type === "story") return <BookOpen className="text-blue-500 w-4 h-4" />;
@@ -42,12 +12,36 @@ const getIcon = (type) => {
 };
 
 export default function JiraBoard() {
-  const [issues, setIssues] = useState(initialIssues);
+  /* 🔥 PROJECT ID FROM URL */
+  const { projectId } = useParams();
 
-  // 🔥 Drag end handler
-  const onDragEnd = (result) => {
+  const [columns, setColumns] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  /* ---------- LOAD BOARD ---------- */
+  useEffect(() => {
+    if (!projectId) return;
+    loadBoard();
+  }, [projectId]);
+
+  const loadBoard = async () => {
+    try {
+      setLoading(true);
+      const res = await getBoardByProjectId(projectId);
+      console.log("BOARD RESPONSE:", res);
+
+      const boardColumns = res?.columns?.board?.columns || [];
+      setColumns(boardColumns);
+    } catch (err) {
+      console.error("Failed to load board", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ---------- DRAG END ---------- */
+  const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
-
     if (!destination) return;
 
     if (
@@ -56,87 +50,110 @@ export default function JiraBoard() {
     )
       return;
 
-    setIssues((prev) =>
-      prev.map((issue) =>
-        issue.id === draggableId
-          ? { ...issue, status: destination.droppableId }
-          : issue
-      )
-    );
+    const sourceCol = columns.find((c) => c.column_info.id === source.droppableId);
+    const destCol = columns.find((c) => c.column_info.id === destination.droppableId);
+
+    if (!sourceCol || !destCol) return;
+
+    const movedIssue = sourceCol.issues.find((i) => i.id === draggableId);
+
+    try {
+      /* 🔥 BACKEND UPDATE */
+      await sprintTaskMoveColumn(draggableId, {
+        status: destCol.column_info.status,
+      });
+
+      /* 🔥 FRONTEND UPDATE */
+      const updated = columns.map((col) => {
+        if (col.column_info.id === sourceCol.column_info.id) {
+          return {
+            ...col,
+            issues: col.issues.filter((i) => i.id !== draggableId),
+          };
+        }
+
+        if (col.column_info.id === destCol.column_info.id) {
+          return {
+            ...col,
+            issues: [...col.issues, { ...movedIssue, status: destCol.column_info.status }],
+          };
+        }
+
+        return col;
+      });
+
+      setColumns(updated);
+    } catch (err) {
+      console.error("Issue move failed", err);
+    }
   };
 
   return (
-    <div className="p-6 bg-gray-100 rounded-lg">
-      {/* Header */}
-      <div className="flex justify-end items-center gap-3 mb-6">
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-          + Add column
+    <div className="p-6 bg-gray-100 rounded-lg h-full flex flex-col">
+      {/* ---------- HEADER ---------- */}
+      <div className="flex justify-end gap-3 mb-6">
+        <button className="px-4 py-2 shadow-sm/20 text-blue-600 hover:bg-gray-200 hover:scale-104 cursor-pointer transition rounded-lg">
+          + Add Column
         </button>
-        <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+        <button className="shadow-sm/20  text-green-600 hover:bg-gray-200 hover:scale-104 cursor-pointer transition  px-4 py-2 rounded-lg">
           Complete Sprint
         </button>
       </div>
 
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-4 gap-6">
-          {columns.map((col) => (
-            <Droppable droppableId={col.key} key={col.key}>
-              {(provided) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className="bg-gray-200 rounded-2xl p-4 h-[60vh] shadow-md flex flex-col"
-                >
-                  <h2 className="text-gray-700 font-semibold mb-4">
-                    {col.title}
-                  </h2>
+      {loading ? (
+        <p className="text-center text-gray-500 mt-20">Loading board...</p>
+      ) : (
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div className="flex gap-4 overflow-x-auto">
+            {columns.map((col) => (
+              <Droppable key={col.column_info.id} droppableId={col.column_info.id}>
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="bg-gray-200 rounded-2xl p-4 w-full h-[56vh] flex flex-col shadow-md"
+                  >
+                    <h2 className="text-gray-700 font-semibold mb-4">
+                      {col.column_info.name}
+                    </h2>
 
-                  <div className="space-y-3 overflow-y-auto">
-                    {issues.filter((i) => i.status === col.key).length === 0 && (
-                      <p className="text-blue-400 text-sm text-center mt-10">
-                        No tasks
-                      </p>
-                    )}
+                    <div className="space-y-3 flex-1">
+                      {col.issues.length === 0 && (
+                        <p className="text-blue-400 text-sm text-center mt-10">
+                          No tasks
+                        </p>
+                      )}
 
-                    {issues
-                      .filter((i) => i.status === col.key)
-                      .map((issue, index) => (
-                        <Draggable
-                          draggableId={issue.id}
-                          index={index}
-                          key={issue.id}
-                        >
+                      {col.issues.map((issue, index) => (
+                        <Draggable key={issue.id} draggableId={issue.id} index={index}>
                           {(provided) => (
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              className="bg-white rounded-xl p-3 shadow
-                                         hover:shadow-lg transition cursor-pointer"
+                              className="bg-white rounded-xl p-3 shadow hover:shadow-lg transition cursor-pointer"
                             >
                               <div className="flex items-center gap-2 mb-2">
                                 {getIcon(issue.type)}
-                                <span className="font-medium text-sm">
-                                  {issue.title}
-                                </span>
+                                <span className="font-medium text-sm">{issue.name}</span>
                               </div>
-
                               <span className="text-xs px-2 py-1 rounded-full bg-gray-100">
-                                {issue.type.toUpperCase()}
+                                {issue.type?.toUpperCase()}
                               </span>
                             </div>
                           )}
                         </Draggable>
                       ))}
 
-                    {provided.placeholder}
+                      {provided.placeholder}
+                    </div>
                   </div>
-                </div>
-              )}
-            </Droppable>
-          ))}
-        </div>
-      </DragDropContext>
+                )}
+              </Droppable>
+            ))}
+          </div>
+        </DragDropContext>
+      )}
     </div>
   );
 }

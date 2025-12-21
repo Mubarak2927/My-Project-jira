@@ -3,7 +3,7 @@ import {
   getAllProjects,
   deleteProject,
   createProject,
-} from "../API/ProjectAPI";
+} from "../API/projectAPI";
 import { useNavigate } from "react-router-dom";
 import { Trash2, Plus } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
@@ -90,7 +90,7 @@ const ProjectManagement = () => {
 
       {/* TABLE */}
       {!loading && (
-        <div className="overflow-x-auto rounded-xl h-[70vh] overflow-y-auto border border-gray-800">
+        <div className="overflow-x-auto rounded-xl h-[63vh] overflow-y-auto border border-gray-800">
           <table className="w-full border-collapse text-sm">
             <thead className="bg-gray-300">
               <tr>

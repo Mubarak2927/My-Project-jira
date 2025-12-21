@@ -39,7 +39,7 @@ const Epic = ({ onCreate, epics, selectedEpic, onSelectEpic }) => {
 
         <button
           onClick={handleSubmit}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="flex items-center gap-2 bg-gray-100 shadow-sm/40 text-blue-700 hover:scale-105 transition cursor-pointer px-4 py-2 rounded-lg "
         >
           <Plus size={16} />
           Add Epic
@@ -54,7 +54,7 @@ const Epic = ({ onCreate, epics, selectedEpic, onSelectEpic }) => {
        {epics.map((epic) => (
   <div
     key={epic.id} // ✅ FIX
-    onClick={() => onSelectEpic(epic)} // keep full object
+    onClick={() => onSelectEpic(epic)} 
     className={`p-3 rounded-lg cursor-pointer
       ${
         selectedEpic?.id === epic.id // ✅ FIX
