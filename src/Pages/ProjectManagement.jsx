@@ -61,6 +61,7 @@ const ProjectManagement = () => {
       toast.error("Delete failed");
     }
   };
+  
 
   return (
     <div className="p-6 bg-gray-200 mt-5 rounded-xl">
