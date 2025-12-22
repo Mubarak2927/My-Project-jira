@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import DigitalyLogo from '../assets/Digi.png';
+import DigitalyLogo from "../assets/Digi.png";
 import {
   FolderKanban,
   CalendarPlus,
@@ -15,28 +15,24 @@ import {
   ChevronsLeft,
 } from "lucide-react";
 
-
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const [collapsed, setCollapsed] = useState(true);
-const isHomeActive = location.pathname === "/home";
+  const isHomeActive = location.pathname === "/home";
 
-const isProjectManagementActive =
-  location.pathname === "/projects" ||
-  location.pathname.startsWith("/projects/");
-
+  const isProjectManagementActive =
+    location.pathname === "/projects" ||
+    location.pathname.startsWith("/projects/");
 
   const activeProjectId = location.pathname.startsWith("/projects/")
     ? location.pathname.split("/")[2]
     : null;
 
-  
   // useEffect(() => {
   //   if (activeProjectId) setShowProjects(true);
   // }, [activeProjectId]);
-
 
   return (
     <>
@@ -61,45 +57,35 @@ const isProjectManagementActive =
             <img src={DigitalyLogo} alt="" />
           </div>
           {!collapsed && (
-            <h1 className="text-xl font-semibold text-white">
-              Digitaly
-            </h1>
+            <h1 className="text-xl font-semibold text-white">Digitaly</h1>
           )}
         </div>
 
         {/* Nav */}
         <nav className="flex-1 space-y-1 px-2">
-
-         <SidebarItem
-  icon={<Home />}
-  label="Home"
-  collapsed={collapsed}
-  active={isHomeActive}
-  onClick={() => navigate("/home")}
-/>
+          <SidebarItem
+            icon={<Home />}
+            label="Home"
+            collapsed={collapsed}
+            active={isHomeActive}
+            onClick={() => navigate("/home")}
+          />
 
           <SidebarItem
-  icon={<FolderKanban />}
-  label="Projects Management"
-  collapsed={collapsed}
-  active={isProjectManagementActive}
-  onClick={() => navigate("/projects")}
-/>
-
+            icon={<FolderKanban />}
+            label="Projects Management"
+            collapsed={collapsed}
+            active={isProjectManagementActive}
+            onClick={() => navigate("/projects")}
+          />
 
           <SidebarItem
             icon={<CalendarPlus />}
-            label="completesprint"
+            label="Sprints"
             collapsed={collapsed}
           />
 
-          <SidebarItem
-            icon={<Users />}
-            label="Teams"
-            collapsed={collapsed}
-          />
-
-          
+          <SidebarItem icon={<Users />} label="Teams" collapsed={collapsed} />
         </nav>
 
         {/* Logout */}
@@ -112,7 +98,6 @@ const isProjectManagementActive =
           {!collapsed && "Logout"}
         </button>
       </div>
-
     </>
   );
 };
@@ -128,6 +113,4 @@ const SidebarItem = ({ icon, label, collapsed, onClick, active }) => (
     {!collapsed && <span>{label}</span>}
   </button>
 );
-;
-
 export default Sidebar;

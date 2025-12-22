@@ -18,7 +18,6 @@ const apps = [
     subtitle: "Digitaly",
     logo: "https://tse3.mm.bing.net/th/id/OIP.dQgEp1HosKCFVVszhaPzMgHaHa?pid=Api&P=0&h=180",
   },
-  
 ];
 
 const Home = () => {
@@ -52,13 +51,16 @@ const Home = () => {
 
       {/* Header Banner */}
       <div className="bg-green-300 px-8 py-6 rounded-2xl flex justify-between items-center">
-        <div>
-          <p className="text-sm text-gray-700">
-            {formattedDate} • {formattedTime}
-          </p>
-          <h1 className="text-2xl font-semibold text-gray-900">
+        <div> 
+          <h1 className="text-2xl  font-semibold text-gray-900">
             Hello, DIGITALY
           </h1>
+          <p>
+            {formattedDate} 
+          </p>
+          <div>
+            <p>{formattedTime}</p>
+          </div>
         </div>
       </div>
 
@@ -66,7 +68,6 @@ const Home = () => {
       <div className="px-8 mt-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Your apps</h2>
-          
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -76,16 +77,10 @@ const Home = () => {
               className="bg-white rounded-lg p-4 shadow hover:shadow-md cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <img
-                  src={app.logo}
-                  alt={app.name}
-                  className="w-10 h-10"
-                />
+                <img src={app.logo} alt={app.name} className="w-10 h-10" />
                 <div>
                   <p className="font-medium">{app.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {app.subtitle}
-                  </p>
+                  <p className="text-sm text-gray-500">{app.subtitle}</p>
                 </div>
               </div>
             </div>
@@ -93,7 +88,6 @@ const Home = () => {
           <div className="text-lg font-semibold mt-5">Frequently Used</div>
         </div>
       </div>
-
     </div>
   );
 };

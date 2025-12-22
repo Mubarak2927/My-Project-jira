@@ -1,50 +1,75 @@
-import axios from "axios";
-import { Trash2 } from "lucide-react";
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
+import { uploadBulkFile } from "../API/projectAPI";
+import toast from "react-hot-toast";
 
-
-const ProjectModal = ({ setModalOpen, onSubmit ,handleBulkUpload}) => {
+const ProjectModal = ({ setModalOpen, onSubmit, onBulkUpload }) => {
   const [projectName, setProjectName] = useState("");
   const [projectKey, setProjectKey] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState("");
-const [endDate, setEndDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
+  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
-   const [file, setFile] = useState(null);
-  const fileInputRef = useRef(null);
 
-  const handleRemoveFile = () => {
-    setFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+  // ================= MANUAL CREATE =================
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    onSubmit(
+      {
+        name: projectName,
+        key: projectKey,
+        description,
+        start_date: startDate ? `${startDate}T00:00:00` : null,
+        end_date: endDate ? `${endDate}T23:59:59` : null,
+      },
+      setLoading
+    );
+  };
+
+  // ================= FILE SELECT =================
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
+
+    const allowedTypes = [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+    ];
+
+    if (!allowedTypes.includes(selectedFile.type)) {
+      toast.error("Only Excel files (.xls, .xlsx) are allowed!");
+      e.target.value = null;
+      return;
+    }
+
+    setFile(selectedFile);
+  };
+
+  // ================= BULK UPLOAD =================
+  const handleUpload = async () => {
+    if (!file) return toast.error("Select a file first!");
+
+    try {
+      setLoading(true);
+      await uploadBulkFile(file);
+
+      toast.success("Project Created successfully!");
+      onBulkUpload(true); // 🔥 JUST REFRESH PROJECTS
+      setFile(null);
+      setModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Upload failed!");
+    } finally {
+      setLoading(false);
     }
   };
 
- 
-
- const handleSubmit = (e) => {
-  e.preventDefault();
-
-  onSubmit(
-  {
-    name: projectName,
-    key: projectKey,
-    description,
-   start_date: startDate ? `${startDate}T00:00:00` : null,
-end_date: endDate ? `${endDate}T23:59:59` : null,
-
-  },
-  setLoading
-);
-
-};
-
-  
   return (
     <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center">
       <div className="relative bg-white p-6 rounded-2xl w-full max-w-md shadow-2xl">
-        {/* Close */}
         <button
           onClick={() => setModalOpen(false)}
           className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
@@ -52,14 +77,16 @@ end_date: endDate ? `${endDate}T23:59:59` : null,
           ✕
         </button>
 
-        <h2 className="text-xl font-semibold mb-4">Create Project</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          Create Project / Bulk Upload
+        </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* MANUAL FIELDS */}
           <input
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
             placeholder="Project Name"
-            required
             className="w-full border p-2 rounded-lg"
           />
 
@@ -67,7 +94,6 @@ end_date: endDate ? `${endDate}T23:59:59` : null,
             value={projectKey}
             onChange={(e) => setProjectKey(e.target.value)}
             placeholder="Project Key"
-            required
             className="w-full border p-2 rounded-lg"
           />
 
@@ -77,27 +103,45 @@ end_date: endDate ? `${endDate}T23:59:59` : null,
             placeholder="Description"
             className="w-full border p-2 rounded-lg"
           />
+
           <div className="grid grid-cols-2 gap-3">
-  <input
-    type="date"
-    value={startDate}
-    onChange={(e) => setStartDate(e.target.value)}
-    required
-    className="w-full border p-2 rounded-lg"
-  />
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full border p-2 rounded-lg"
+            />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full border p-2 rounded-lg"
+            />
+          </div>
 
-  <input
-    type="date"
-    value={endDate}
-    onChange={(e) => setEndDate(e.target.value)}
-    required
-    className="w-full border p-2 rounded-lg"
-  />
-</div>
+          {/* BULK UPLOAD */}
+          <div>
+            <h1 className="text-lg font-semibold mt-4">Upload Excel File</h1>
 
-          
+            <input
+              type="file"
+              accept=".xls,.xlsx"
+              onChange={handleFileChange}
+              className="mt-3 w-full"
+            />
 
-          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={handleUpload}
+              disabled={loading}
+              className="bg-green-600 rounded-lg text-white p-2 mt-3 w-full"
+            >
+              {loading ? "Uploading..." : "Upload Excel"}
+            </button>
+          </div>
+
+          {/* ACTION BUTTONS */}
+          <div className="flex justify-end gap-2 mt-4">
             <button
               type="button"
               onClick={() => setModalOpen(false)}
@@ -111,7 +155,7 @@ end_date: endDate ? `${endDate}T23:59:59` : null,
               disabled={loading}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg"
             >
-              {loading ? "Creating..." : "Create"}
+              {loading ? "Creating..." : "Create Project"}
             </button>
           </div>
         </form>

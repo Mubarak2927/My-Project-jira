@@ -382,3 +382,21 @@
     );
     return res.data;
   };
+
+  export const uploadBulkFile = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file); // 'file' is the key your backend expects
+
+    const response = await API.post("/bulk-import/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data", // important for file uploads
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Upload failed:", error.response?.data || error.message);
+    throw error;
+  }
+};

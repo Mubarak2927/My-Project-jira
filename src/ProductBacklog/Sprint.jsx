@@ -8,11 +8,12 @@ import {
   getIssues,
   startSprints,
 } from "../API/projectAPI";
-import CompleteSprint from "./CompleteSprint";
+// import CompleteSprint from "./CompleteSprint";
 
 export default function Sprint() {
   const { project } = useOutletContext();
   const projectId = project?.id;
+
 
   const [showModal, setShowModal] = useState(false);
   const [sprints, setSprints] = useState([]);
@@ -132,7 +133,7 @@ export default function Sprint() {
       // 🔥 Call API to move sprint issues to board
       await startSprints(selectedSprint.id, sprintIssues);
 
-      toast.success(`Sprint "${selectedSprint.name}" started 🚀`);
+      toast.success(`Sprint ${selectedSprint.name} started `);
 
       // Optional: refresh board after starting sprint
       // You can either use context, Redux, or a function passed from JiraBoard to reload
@@ -243,29 +244,39 @@ export default function Sprint() {
           return (
             <div
               key={s.id}
-              onClick={() => {
-                setSelectedSprint(s);
-                fetchSprintIssues(s.id);
-              }}
+             onClick={() => {
+  if (selectedSprint?.id === s.id) {
+    // same sprint clicked → hide
+    setSelectedSprint(null);
+    setSprintIssues([]);
+  } else {
+    // new sprint clicked → show
+    setSelectedSprint(s);
+    fetchSprintIssues(s.id);
+  }
+}}
+
               className={`cursor-pointer relative bg-white p-4 rounded-3xl shadow-lg ${
                 isSelected ? "ring-2 ring-indigo-500" : ""
               }`}
             >
               <p className="font-semibold">{s.name}</p>
               <p className="text-gray-500 mt-1">{s.goal}</p>
-
-              {/* ✅ Only show start button if this sprint is selected */}
               {isSelected && sprintIssues.length > 0 && (
-                <div className="flex justify-end mb-4">
-                  <button
-                    onClick={handleStartSprint}
-                    disabled={startingSprint}
-                    className="px-6 py-3 bg-green-600 text-white rounded-full hover:scale-105 transition cursor-pointer"
-                  >
-                    {startingSprint ? "Starting..." : "Start Sprint"}
-                  </button>
-                </div>
-              )}
+  <div className="flex justify-end mb-4">
+    <button
+      onClick={(e) => {
+        e.stopPropagation(); 
+        handleStartSprint();
+      }}
+      disabled={startingSprint}
+      className="px-6 py-3 bg-green-600 text-white rounded-full hover:scale-105 transition cursor-pointer"
+    >
+      {startingSprint ? "Starting..." : "Start Sprint"}
+    </button>
+  </div>
+)}
+
 
               <div className="flex justify-between items-center text-xs mt-4">
                 <span>
@@ -302,7 +313,7 @@ export default function Sprint() {
           )}
         </div>
       )}
-        <CompleteSprint projectId={project.id}/>
+        {/* <CompleteSprint projectId={project.id}/> */}
     </div>
   );
 }

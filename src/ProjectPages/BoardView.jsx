@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Bug, BookOpen, CheckSquare, X } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { addColumnToBoard, completeSprint, getBoardByProjectId, getRunningSprints, sprintTaskMoveColumn } from "../API/projectAPI";
+import toast from "react-hot-toast";
 
 /* ---------- ICON ---------- */
 const getIcon = (type) => {
@@ -123,6 +124,7 @@ export default function JiraBoard() {
         setNewColumnName("");
         setNewColumnPosition(columns.length);
         setShowModal(false);
+        toast.success(`Column ${newCol.name} added Sucessfully`)
       }
     } catch (err) {
       console.error("Failed to add column", err);
@@ -148,18 +150,17 @@ useEffect(() => {
   
 const handleCompleteSprint = async () => {
   try {
-    if (!projectId) return alert("No project selected");
+    if (!projectId) return toast.error("No project selected");
 
     // 1️⃣ Get running sprint
     const res = await getRunningSprints(projectId);
     const sprintId = res?.sprints?.[0]?.sprint_id;
 
     if (!sprintId) {
-      return alert("No active sprint found!");
+      return toast.error("No active sprint found!");
     }
-    await completeSprint(sprintId);
 
-    // 2️⃣ Collect DONE & NOT DONE issues from board
+    // 2️⃣ Collect DONE & NOT DONE issues
     const doneIssueIds = [];
     const notDoneIssueIds = [];
 
@@ -173,21 +174,22 @@ const handleCompleteSprint = async () => {
       });
     });
 
-    // 3️⃣ Call backend complete sprint
+    // 3️⃣ SINGLE backend call (IMPORTANT)
     await completeSprint(sprintId, {
       completed_issue_ids: doneIssueIds,
       return_to_backlog_issue_ids: notDoneIssueIds,
     });
 
-    // 4️⃣ Refresh board
+    // 4️⃣ Reload board
     await loadBoard();
 
-    alert("Sprint completed successfully!");
+    toast.success("Sprint completed successfully!");
   } catch (err) {
     console.error(err);
-    alert("Failed to complete sprint!");
+    toast.error("Failed to complete sprint!");
   }
 };
+
 
 
   return (

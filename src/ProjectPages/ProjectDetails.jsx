@@ -61,6 +61,9 @@ const ProjectLayout = () => {
         <Tab to="board" label="Board" />
         <Tab to="lists" label="Lists" />
         <Tab to="goals" label="Goals" />
+        <Tab to="completesprint" label="Completed Sprints" />
+
+        
       </div>
 
       {/* 🔥 Child Pages */}
