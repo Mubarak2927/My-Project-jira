@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { uploadBulkFile } from "../API/projectAPI";
 import toast from "react-hot-toast";
+import { Trash2 } from "lucide-react";
 
 const ProjectModal = ({ setModalOpen, onSubmit, onBulkUpload }) => {
   const [projectName, setProjectName] = useState("");
@@ -120,25 +121,57 @@ const ProjectModal = ({ setModalOpen, onSubmit, onBulkUpload }) => {
           </div>
 
           {/* BULK UPLOAD */}
-          <div>
-            <h1 className="text-lg font-semibold mt-4">Upload Excel File</h1>
+         {/* BULK UPLOAD */}
+<div>
+  <h1 className="text-lg font-semibold mt-4">Upload Excel File</h1>
 
-            <input
-              type="file"
-              accept=".xls,.xlsx"
-              onChange={handleFileChange}
-              className="mt-3 w-full"
-            />
+  {/* HIDDEN FILE INPUT */}
+  <input
+    type="file"
+    accept=".xls,.xlsx"
+    id="excelUpload"
+    onChange={handleFileChange}
+    className="hidden"
+  />
 
-            <button
-              type="button"
-              onClick={handleUpload}
-              disabled={loading}
-              className="bg-green-600 rounded-lg text-white p-2 mt-3 w-full"
-            >
-              {loading ? "Uploading..." : "Upload Excel"}
-            </button>
-          </div>
+  {/* FILE SELECT / DISPLAY */}
+  {!file ? (
+    <label
+      htmlFor="excelUpload"
+      className="block mt-3 w-full text-center cursor-pointer
+                 bg-gray-200 hover:bg-gray-300 text-gray-700
+                 p-2 rounded-lg"
+    >
+      Choose Excel File
+    </label>
+  ) : (
+    <div className="flex items-center justify-between mt-3
+                    bg-gray-100 p-2 rounded-lg">
+      <span className="text-sm text-gray-700 truncate">
+        {file.name}
+      </span>
+
+      <button
+        type="button"
+        onClick={() => setFile(null)}
+        className="text-red-600 font-semibold text-sm hover:text-red-800"
+      >
+        <Trash2 size={15}/>
+      </button>
+    </div>
+  )}
+
+  {/* UPLOAD BUTTON */}
+  <button
+    type="button"
+    onClick={handleUpload}
+    disabled={loading || !file}
+    className="bg-green-600 rounded-lg text-white p-2 mt-3 w-full disabled:opacity-50"
+  >
+    {loading ? "Uploading..." : "Upload Excel"}
+  </button>
+</div>
+
 
           {/* ACTION BUTTONS */}
           <div className="flex justify-end gap-2 mt-4">

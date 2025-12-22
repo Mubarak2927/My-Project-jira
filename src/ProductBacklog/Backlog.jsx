@@ -1,6 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { CheckSquare, BookOpen, Bug, Plus } from "lucide-react";
-import { getSprint, sprintTaskMove } from "../API/projectAPI";
+import {
+  CheckSquare,
+  BookOpen,
+  Bug,
+  Plus,
+  Dot,
+  Trash2,
+  SquarePen,
+  Eye,
+  X,
+} from "lucide-react";
+import {
+  deleteIssues,
+  getIssueComments,
+  getSprint,
+  IssueComments,
+  sprintTaskMove,
+  updateIssue,
+} from "../API/projectAPI";
 import { useOutletContext } from "react-router";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -14,19 +31,33 @@ const Backlog = ({
   loading,
   handleAssignSprint,
   setSelectedIssues,
-  selectedIssues
+  selectedIssues,
+  handleUpdateIssue,
+  handleAddComment,
+  openIssueModal,
+  handleDeleteIssue,
+  openEditModal,
+  modalIssue,
+  editIssue,
+  issueComments,
+  newComment,
+  setNewComment,
+  setModalIssue,
+  editForm,
+  setEditIssue,
+  setEditForm,
 }) => {
   const filteredIssues = issues.filter((issue) => {
-  // 🔥 Sprint assign pannina task backlog la varakoodathu
-  if (issue.sprint_id) return false;
+    // 🔥 Sprint assign pannina task backlog la varakoodathu
+    if (issue.sprint_id) return false;
 
-  // 🔥 Epic filter
-  if (selectedEpic) {
-    return issue.epic_id === selectedEpic.id;
-  }
+    // 🔥 Epic filter
+    if (selectedEpic) {
+      return issue.epic_id === selectedEpic.id;
+    }
 
-  return true;
-});
+    return true;
+  });
 
   const storyPointsOptions = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
 
@@ -73,8 +104,6 @@ const Backlog = ({
 
   /* ===================== ASSIGN SPRINT ===================== */
 
-
-
   const getEpicName = (epicId) => {
     const epic = epics.find((e) => e.id === epicId);
     return epic ? epic.name : "No Epic";
@@ -82,7 +111,7 @@ const Backlog = ({
 
   return (
     <div className="rounded-xl p-3 bg-gray-100 shadow-md/40 w-full h-[73vh]">
-      <Toaster position="top-right"/>
+      <Toaster position="top-right" />
       {/* ================= HEADER ================= */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="font-semibold text-lg">Backlog</h2>
@@ -170,7 +199,8 @@ const Backlog = ({
           disabled={loading}
           className="bg-white hover:bg-gray-200 flex items-center gap-1 cursor-pointer hover:scale-102 transition shadow-md/20 text-green-600 px-4 rounded"
         >
-          <Plus size={15}/>{loading ? "Adding" : "Add Task"}
+          <Plus size={15} />
+          {loading ? "Adding" : "Add Task"}
         </button>
       </div>
 
@@ -180,7 +210,7 @@ const Backlog = ({
       <div className="space-y-3 overflow-y-auto h-[30vh] pr-1">
         {filteredIssues.map((issue) => (
           <div
-            key={issue.id} // ✅ FIX (_id → id)
+            key={issue.id}
             className="bg-gray-300 rounded-xl p-3 shadow-sm flex items-start gap-2"
           >
             <input
@@ -195,10 +225,15 @@ const Backlog = ({
                 {typeIcon[issue.type]}
                 <p className="font-semibold text-gray-800 truncate">
                   {issue.name}
+                  {issue.type === "story" && issue.story_points && (
+                    <span className="px-2 py-0.5 text-[10px] rounded-full text-green-600 font-medium">
+                      Story_Points : {issue.story_points}
+                    </span>
+                  )}
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 mt-2 flex-wrap text-xs">
+              <div className="flex items-center  gap-2 mt-2 flex-wrap text-xs">
                 {/* Epic Name */}
                 <span className="px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">
                   {getEpicName(issue.epic_id)}
@@ -215,15 +250,219 @@ const Backlog = ({
                 </span>
 
                 {/* Story Points */}
-                {issue.type === "story" && issue.story_points && (
-                  <span className="px-2 py-0.5 rounded-full text-green-600 font-medium">
-                    SP: {issue.story_points}
-                  </span>
-                )}
-                <span className="text-shadow-lg">
-                  {issue.status}
+
+                <span className="text-shadow-lg flex items-center   ">
+                  <Dot size={20} className="text-white" /> {issue.status}
                 </span>
               </div>
+              <span className="text-sm"> {issue.description}</span>
+            </div>
+
+            <div className="mt-5 flex gap-3">
+              <button
+                className="text-green-600"
+                onClick={() => openIssueModal(issue)}
+              >
+                <Eye size={15} />
+              </button>
+              {modalIssue && (
+                <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-xl shadow-lg w-[500px] max-h-[80vh] overflow-y-auto p-5 relative">
+                    <button
+                      onClick={() => setModalIssue(null)}
+                      className="absolute top-3 right-3 text-gray-600 hover:text-gray-800"
+                    >
+                      <X size={20} />
+                    </button>
+
+                    <h2 className="font-semibold text-lg mb-2">
+                      Task Name : {modalIssue.name}
+                    </h2>
+                    <p className="mb-2 text-sm ">
+                      Description : {modalIssue.description}
+                    </p>
+
+                    <div className=" gap-2 mb-3">
+                      <p className="px-2 py-0.5 rounded-full ">
+                        Type : {modalIssue.type}
+                      </p>
+                      <p className="px-2 py-0.5 rounded-full ">
+                        Priority : {modalIssue.priority}
+                      </p>
+                      {modalIssue.story_points && (
+                        <p className="px-2 py-0.5 rounded-full bg-green-100">
+                          Story Points: {modalIssue.story_points}
+                        </p>
+                      )}
+                      <span className="px-2 py-0.5 rounded-full ">
+                        Status : {modalIssue.status}
+                      </span>
+                    </div>
+
+                    <div className="mt-4">
+                      <h3 className="font-medium mb-2">Comments</h3>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {issueComments.length === 0 && (
+                          <p className="text-gray-400 text-sm">
+                            No comments yet.
+                          </p>
+                        )}
+                        {issueComments.map((c) => (
+                          <div key={c.id} className="p-2 bg-gray-100 rounded">
+                            <p className="text-sm">{c.comment}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex gap-2 mt-3">
+                        <input
+                          type="text"
+                          className="flex-1 px-2 py-1 rounded border"
+                          placeholder="Add a comment..."
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                        />
+                        <button
+                          onClick={handleAddComment}
+                          className="bg-blue-500 text-white px-3 py-1 rounded"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <button
+                className="text-blue-600"
+                onClick={() => openEditModal(issue)}
+              >
+                <SquarePen size={15} />
+              </button>
+              {editIssue && (
+                <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-xl shadow-lg w-[500px] max-h-[80vh] overflow-y-auto p-5 relative">
+                    <button
+                      onClick={() => setEditIssue(null)}
+                      className="absolute top-3 right-3 text-gray-600 hover:text-gray-800"
+                    >
+                      <X size={20} />
+                    </button>
+
+                    <h2 className="font-semibold text-lg mb-3">Edit Task</h2>
+
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        className="w-full px-2 py-1 border rounded"
+                        placeholder="Title"
+                        value={editForm.name}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, name: e.target.value })
+                        }
+                      />
+
+                      <textarea
+                        className="w-full px-2 py-1 border rounded"
+                        placeholder="Description"
+                        value={editForm.description}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            description: e.target.value,
+                          })
+                        }
+                      />
+
+                      <select
+                        className="w-full px-2 py-1 border rounded"
+                        value={editForm.type}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, type: e.target.value })
+                        }
+                      >
+                        <option value="task">Task</option>
+                        <option value="story">Story</option>
+                        <option value="bug">Bug</option>
+                      </select>
+                      {editForm.type === "story" && (
+                        <input
+                          type="number"
+                          className="w-full px-2 py-1 border rounded"
+                          placeholder="Story Points"
+                          value={editForm.story_points}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              story_points: e.target.value,
+                            })
+                          }
+                        />
+                      )}
+
+                      <select
+                        className="w-full px-2 py-1 border rounded"
+                        value={editForm.priority}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, priority: e.target.value })
+                        }
+                      >
+                        <option value="">Priority</option>
+                        <option value="highest">Highest</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                        <option value="lowest">Lowest</option>
+                      </select>
+
+                      <select
+                        className="w-full px-2 py-1 border rounded"
+                        value={editForm.epic_id}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, epic_id: e.target.value })
+                        }
+                      >
+                        <option value="">No Epic</option>
+                        {epics.map((epic) => (
+                          <option key={epic.id} value={epic.id}>
+                            {epic.name}
+                          </option>
+                        ))}
+                      </select>
+
+                      {editForm.type === "story" && (
+                        <input
+                          type="number"
+                          className="w-full px-2 py-1 border rounded"
+                          placeholder="Story Points"
+                          value={editForm.story_points}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              story_points: e.target.value,
+                            })
+                          }
+                        />
+                      )}
+
+                      <button
+                        onClick={handleUpdateIssue}
+                        className="bg-green-500 text-white px-4 py-2 rounded"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <button
+                className="text-red-600"
+                onClick={() => handleDeleteIssue(issue.id)}
+              >
+                <Trash2 size={15} />
+              </button>
             </div>
           </div>
         ))}
@@ -245,17 +484,16 @@ const Backlog = ({
         </select>
 
         <button
-  onClick={handleAssignSprint}
-  disabled={!form.sprintId || selectedIssues.length === 0}
-  className={`border px-4 py-2 rounded text-white ${
-    !form.sprintId || selectedIssues.length === 0
-      ? "bg-gray-400 cursor-not-allowed"
-      : "bg-blue-500"
-  }`}
->
-  Assign Sprint
-</button>
-
+          onClick={handleAssignSprint}
+          disabled={!form.sprintId || selectedIssues.length === 0}
+          className={`border px-4 py-2 rounded text-white ${
+            !form.sprintId || selectedIssues.length === 0
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-500"
+          }`}
+        >
+          Assign Sprint
+        </button>
       </div>
     </div>
   );

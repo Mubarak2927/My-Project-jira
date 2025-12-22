@@ -1,7 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import Epic from "./Epic";
-import { createEpic, getEpic, getIssues, createIssues, sprintTaskMove } from "../API/projectAPI";
+import {
+  createEpic,
+  getEpic,
+  getIssues,
+  createIssues,
+  sprintTaskMove,
+  deleteEpic,
+  updateEpic,
+  getEpicComments,
+  epicComments,
+  getIssueComments,
+  updateIssue,
+  IssueComments,
+  deleteIssues, // ✅ ADD THIS API
+} from "../API/projectAPI";
 import toast, { Toaster } from "react-hot-toast";
 import Backlog from "./Backlog";
 
@@ -13,7 +27,18 @@ const ProductBacklog = () => {
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedIssues, setSelectedIssues] = useState([]);
-
+  const [modalIssue, setModalIssue] = useState(null); // Track the issue for modal
+  const [issueComments, setIssueComments] = useState([]); // Store comments for the modal
+  const [newComment, setNewComment] = useState(""); // Input for new comment
+  const [editIssue, setEditIssue] = useState(null); // Track issue for editing
+  const [editForm, setEditForm] = useState({
+    name: "",
+    description: "",
+    type: "task",
+    priority: "",
+    story_points: "",
+    epic_id: "",
+  });
 
   const [form, setForm] = useState({
     type: "task",
@@ -68,75 +93,186 @@ const ProductBacklog = () => {
     }
   };
 
+  /* ================= DELETE EPIC ================= */
+  const handleDeleteEpic = async (epicId) => {
+    if (!window.confirm("Delete this epic?")) return;
+
+    try {
+      await deleteEpic(epicId);
+      toast.success("Epic Deleted");
+
+      setEpics((prev) => prev.filter((e) => e.id !== epicId));
+
+      // selected epic delete aana clear pannum
+      if (selectedEpic?.id === epicId) {
+        setSelectedEpic(null);
+        setForm((prev) => ({ ...prev, epicId: "" }));
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete epic");
+    }
+  };
+
   /* ================= CREATE ISSUE ================= */
-const handleAdd = async () => {
-  if (!form.title) return alert("Title required");
-  if (form.type === "story" && !form.storyPoints)
-    return alert("Story points required for story");
+  const handleAdd = async () => {
+    if (!form.title) return alert("Title required");
+    if (form.type === "story" && !form.storyPoints)
+      return alert("Story points required");
 
-  setLoading(true);
-  try {
+    setLoading(true);
+    try {
+      const payload = {
+        project_id: project.id,
+        name: form.title,
+        description: form.description,
+        type: form.type.toLowerCase(),
+        priority: form.priority.toLowerCase(),
+        epic_id: form.epicId || null,
+        ...(form.type === "story" && {
+          story_points: Number(form.storyPoints),
+        }),
+      };
+
+      const newTask = await createIssues(payload);
+      toast.success("Task Created Successfully");
+      setIssues((prev) => [...prev, newTask]);
+
+      setForm({
+        type: "task",
+        title: "",
+        description: "",
+        epicId: selectedEpic ? selectedEpic.id : "",
+        priority: "",
+        storyPoints: "",
+        sprintId: "",
+      });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ================= ASSIGN SPRINT ================= */
+  const handleAssignSprint = async () => {
+    if (!form.sprintId) return alert("Select sprint");
+    if (!selectedIssues.length) return alert("Select tasks");
+
+    try {
+      await sprintTaskMove(form.sprintId, {
+        issue_ids: selectedIssues,
+      });
+
+      await fetchIssues();
+      toast.success("Tasks assigned to sprint");
+
+      setSelectedIssues([]);
+      setForm({ ...form, sprintId: "" });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to assign sprint");
+    }
+  };
+  /* ================= EDIT EPIC ================= */
+  const handleEditEpic = async (epicId, data) => {
+    try {
+      const updatedEpic = await updateEpic(epicId, data);
+
+      toast.success("Epic Updated");
+
+      setEpics((prev) =>
+        prev.map((epic) => (epic.id === epicId ? updatedEpic : epic))
+      );
+
+      if (selectedEpic?.id === epicId) {
+        setSelectedEpic(updatedEpic);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update epic");
+    }
+  };
+
+  const handleUpdateIssue = async () => {
+    if (!editIssue) return;
+
     const payload = {
-      project_id: project.id,
-      name: form.title,
-      description: form.description,
-      type: form.type.toLowerCase(),
-      priority: form.priority.toLowerCase(),
-      epic_id: form.epicId || null,
-      ...(form.type === "story" && { story_points: Number(form.storyPoints) }),
+      name: editForm.name,
+      description: editForm.description,
+      type: editForm.type,
+      priority: editForm.priority,
+      epic_id: editForm.epic_id,
     };
-    const newTask = await createIssues(payload); // ✅ capture response
 
-    toast.success("Task Created Successfully");
+    // ✅ Only include story_points if type is story
+    if (editForm.type === "story") {
+      payload.story_points = parseInt(editForm.story_points) || 0;
+    }
 
-    // 1️⃣ Append new task to state
-    setIssues((prev) => [...prev, newTask]);
+    try {
+      await updateIssue(editIssue.id, payload);
+      toast.success("Issue updated successfully");
+      setEditIssue(null);
+      // Optional: update local issues array or refetch from parent
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update issue");
+    }
+  };
+  const fetchIssueComments = async (issueId) => {
+    try {
+      const res = await getIssueComments(issueId);
+      setIssueComments(res);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
+    try {
+      await IssueComments(modalIssue.id, newComment);
+      toast.success("Comment added");
+      setNewComment("");
+      fetchIssueComments(modalIssue.id);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to add comment");
+    }
+  };
+  const openIssueModal = async (issue) => {
+    setModalIssue(issue);
+    await fetchIssueComments(issue.id);
+  };
+  const handleDeleteIssue = async (issueId) => {
+    if (!window.confirm("Are you sure you want to delete this issue?")) return;
 
-    // 2️⃣ Reset form
-    setForm({
-      type: "task",
-      title: "",
-      description: "",
-      epicId: selectedEpic ? selectedEpic.id : "",
-      priority: "",
-      storyPoints: "",
-      sprintId: "",
+    try {
+      await deleteIssues(issueId);
+      toast.success("Issue deleted");
+
+      // Update issues list after delete
+      setForm((prev) => ({ ...prev })); // Optional: if form depends on issue
+      // Or remove from selectedIssues
+      setSelectedIssues((prev) => prev.filter((id) => id !== issueId));
+
+      // If you pass `issues` as prop from parent, parent should also refetch issues
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete issue");
+    }
+  };
+  const openEditModal = (issue) => {
+    setEditIssue(issue);
+    setEditForm({
+      name: issue.name || "",
+      description: issue.description || "",
+      type: issue.type || "task",
+      priority: issue.priority || "",
+      story_points: issue.story_points || "",
+      epic_id: issue.epic_id || "",
     });
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-};
-
-
- const handleAssignSprint = async () => {
-  if (!form.sprintId) {
-    return alert("Please select a sprint");
-  }
-
-  if (!selectedIssues || selectedIssues.length === 0) {
-    return alert("Please select at least one task");
-  }
-
-  try {
-    await sprintTaskMove(
-      form.sprintId,                 // ✅ sprintId ONLY
-      { issue_ids: selectedIssues }  // ✅ payload ONLY
-    );
-    await fetchIssues();
-
-    toast.success("Tasks assigned to sprint successfully");
-
-    setSelectedIssues([]);
-    setForm({ ...form, sprintId: "" });
-    fetchSprints();
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to assign sprint");
-  }
-};
-
+  };
   return (
     <>
       <Toaster position="top-right" />
@@ -146,21 +282,21 @@ const handleAdd = async () => {
           epics={epics}
           selectedEpic={selectedEpic}
           onCreate={handleEpicCreate}
-      onSelectEpic={(epic) => {
-  setSelectedEpic((prev) => {
-    // 🔁 same epic click panna → All Tasks
-    const isSameEpic = prev?.id === epic?.id;
-    const nextEpic = isSameEpic ? null : epic;
+          onDeleteEpic={handleDeleteEpic}
+          onEditEpic={handleEditEpic}
+          onSelectEpic={(epic) => {
+            setSelectedEpic((prev) => {
+              const isSame = prev?.id === epic?.id;
+              const nextEpic = isSame ? null : epic;
 
-    setForm((prevForm) => ({
-      ...prevForm,
-      epicId: nextEpic ? nextEpic.id : "",
-    }));
+              setForm((prevForm) => ({
+                ...prevForm,
+                epicId: nextEpic ? nextEpic.id : "",
+              }));
 
-    return nextEpic;
-  });
-}}
-
+              return nextEpic;
+            });
+          }}
         />
 
         <Backlog
@@ -174,9 +310,23 @@ const handleAdd = async () => {
           handleAssignSprint={handleAssignSprint}
           setSelectedIssues={setSelectedIssues}
           selectedIssues={selectedIssues}
+          handleUpdateIssue={handleUpdateIssue}
+          fetchIssueComments={fetchIssueComments}
+          handleAddComment={handleAddComment}
+          openIssueModal={openIssueModal}
+          handleDeleteIssue={handleDeleteIssue}
+          openEditModal={openEditModal}
+          modalIssue={modalIssue}
+          editIssue={editIssue}
+          issueComments={issueComments}
+          newComment={newComment}
+          setNewComment={setNewComment}
+          setModalIssue={setModalIssue}
+          editForm={editForm}
+          setEditIssue={setEditIssue}
+          setEditForm={setEditForm}
         />
       </div>
-      
     </>
   );
 };

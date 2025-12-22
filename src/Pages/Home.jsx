@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Toaster } from "react-hot-toast";
-import { ExternalLink } from "lucide-react";
+import { Toaster, toast } from "react-hot-toast";
+import DigitalyLogo from "../assets/Digi.png";
 
 const apps = [
   {
@@ -22,6 +22,7 @@ const apps = [
 
 const Home = () => {
   const [dateTime, setDateTime] = useState(new Date());
+  const [comingSoonApp, setComingSoonApp] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -45,19 +46,26 @@ const Home = () => {
     hour12: true,
   });
 
+  const handleAppClick = (appName) => {
+    setComingSoonApp(appName);
+    setTimeout(() => setComingSoonApp(null), 1000);
+  };
+
   return (
-    <div className=" h-[90vh] mt-5 rounded-lg p-3 bg-gray-50">
+    <div className="h-[90vh] mt-5 rounded-lg p-3 bg-gray-50">
       <Toaster position="top-right" />
 
       {/* Header Banner */}
       <div className="bg-green-300 px-8 py-6 rounded-2xl flex justify-between items-center">
-        <div> 
-          <h1 className="text-2xl  font-semibold text-gray-900">
-            Hello, DIGITALY
-          </h1>
-          <p>
-            {formattedDate} 
-          </p>
+        <div>
+          <div className="flex items-center gap-3">
+            <img src={DigitalyLogo} alt="" className="w-20 h-20" />
+            <h1 className="text-2xl font-semibold text-gray-900">
+              Hello, DIGITALY
+            </h1>
+          </div>
+
+          <p>{formattedDate}</p>
           <div>
             <p>{formattedTime}</p>
           </div>
@@ -74,7 +82,8 @@ const Home = () => {
           {apps.map((app, index) => (
             <div
               key={index}
-              className="bg-white rounded-lg p-4 shadow hover:shadow-md cursor-pointer"
+              className="bg-white rounded-lg p-4 shadow hover:shadow-md cursor-pointer relative"
+              onClick={() => handleAppClick(app.name)}
             >
               <div className="flex items-center gap-3">
                 <img src={app.logo} alt={app.name} className="w-10 h-10" />
@@ -83,9 +92,16 @@ const Home = () => {
                   <p className="text-sm text-gray-500">{app.subtitle}</p>
                 </div>
               </div>
+
+              {/* Coming Soon Overlay */}
+              {comingSoonApp === app.name && (
+                <div className="absolute inset-0 bg-white bg-opacity-50 flex justify-center items-center  text-lg rounded-lg">
+                  Coming Soon.....
+                </div>
+              )}
             </div>
           ))}
-          <div className="text-lg font-semibold mt-5">Frequently Used</div>
+         
         </div>
       </div>
     </div>
