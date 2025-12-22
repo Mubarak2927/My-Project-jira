@@ -3,32 +3,35 @@ import {
   getAllProjects,
   deleteProject,
   createProject,
+  updateProject,
 } from "../API/projectAPI";
 import { useNavigate } from "react-router-dom";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Pencil } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import ProjectModal from "../Modal/ProjectModal";
+import EditProjectModal from "../Modal/EditProjectModal"; // ✅ Import
 
 const ProjectManagement = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false); // ✅ For Edit
+  const [selectedProject, setSelectedProject] = useState(null); // ✅ For edit modal
 
   const navigate = useNavigate();
 
   // ================= FETCH PROJECTS =================
   const fetchProjects = async (showLoader = false) => {
-  try {
-    if (showLoader) setLoading(true);
-    const data = await getAllProjects();
-    setProjects(data); // 🔥 FULL REPLACE
-  } catch {
-    toast.error("Failed to load projects");
-  } finally {
-    if (showLoader) setLoading(false);
-  }
-};
-
+    try {
+      if (showLoader) setLoading(true);
+      const data = await getAllProjects();
+      setProjects(data);
+    } catch {
+      toast.error("Failed to load projects");
+    } finally {
+      if (showLoader) setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchProjects(true);
@@ -39,7 +42,6 @@ const ProjectManagement = () => {
     try {
       setModalLoading(true);
       const newProject = await createProject(formData);
-
       setProjects((prev) => [...prev, newProject]);
       toast.success("Project Created Successfully");
       setModalOpen(false);
@@ -49,7 +51,6 @@ const ProjectManagement = () => {
       setModalLoading(false);
     }
   };
-  
 
   // ================= DELETE PROJECT =================
   const handleDelete = async (e, projectId) => {
@@ -63,6 +64,18 @@ const ProjectManagement = () => {
     } catch {
       toast.error("Delete failed");
     }
+  };
+
+  // ================= EDIT PROJECT =================
+  const handleEditClick = (project) => {
+    setSelectedProject(project);
+    setEditModalOpen(true);
+  };
+
+  const handleUpdateProject = (updatedProject) => {
+    setProjects((prev) =>
+      prev.map((p) => (p.id === updatedProject.id ? updatedProject : p))
+    );
   };
 
   return (
@@ -97,7 +110,7 @@ const ProjectManagement = () => {
                 <th className="py-3 px-3 text-center">Project Name</th>
                 <th className="py-3 px-3 text-center">Key</th>
                 <th className="py-3 px-3 text-center">Description</th>
-                <th className="py-3 px-3 text-center">Delete</th>
+                <th className="py-3 px-3 text-center">Actions</th>
               </tr>
             </thead>
 
@@ -125,11 +138,14 @@ const ProjectManagement = () => {
                   </td>
 
                   <td className="py-3 text-center">{project.key}</td>
-                  <td className="py-3 text-center">
-                    {project.description || "—"}
-                  </td>
+                  <td className="py-3 text-center">{project.description || "—"}</td>
 
-                  <td className="py-3 text-center">
+                  <td className="py-3 flex gap-2.5 text-center justify-center">
+                    <Pencil
+                      size={16}
+                      className="cursor-pointer hover:scale-110 text-blue-600"
+                      onClick={() => handleEditClick(project)}
+                    />
                     <Trash2
                       size={16}
                       className="text-red-600 ml-6 cursor-pointer hover:scale-110"
@@ -143,12 +159,21 @@ const ProjectManagement = () => {
         </div>
       )}
 
-      {/* MODAL */}
+      {/* CREATE MODAL */}
       {modalOpen && (
         <ProjectModal
           setModalOpen={setModalOpen}
           onSubmit={handleCreateProject}
-          onBulkUpload={fetchProjects} // 🔥 KEY FIX
+          onBulkUpload={fetchProjects}
+        />
+      )}
+
+      {/* EDIT MODAL */}
+      {editModalOpen && selectedProject && (
+        <EditProjectModal
+          project={selectedProject}
+          setModalOpen={setEditModalOpen}
+          onUpdate={handleUpdateProject}
         />
       )}
     </div>
