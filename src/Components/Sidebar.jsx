@@ -89,7 +89,7 @@ const isProjectManagementActive =
 
           <SidebarItem
             icon={<CalendarPlus />}
-            label="Sprints"
+            label="completesprint"
             collapsed={collapsed}
           />
 

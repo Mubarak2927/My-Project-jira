@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Bug, BookOpen, CheckSquare, X } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { addColumnToBoard, getBoardByProjectId, sprintTaskMoveColumn } from "../API/projectAPI";
+import { addColumnToBoard, completeSprint, getBoardByProjectId, getRunningSprints, sprintTaskMoveColumn } from "../API/projectAPI";
 
 /* ---------- ICON ---------- */
 const getIcon = (type) => {
@@ -128,6 +128,67 @@ export default function JiraBoard() {
       console.error("Failed to add column", err);
     }
   };
+  const fetchRunningSprints = async () => {
+  try {
+    if (!projectId) return;
+
+    const res = await getRunningSprints(projectId);
+    console.log("Running Sprints:", res);
+  } catch (error) {
+    console.error("Failed to fetch running sprints:", error);
+  }
+};
+useEffect(() => {
+    fetchRunningSprints();
+  }, []);
+
+
+  const isDoneColumn = (status) =>
+  status?.toLowerCase() === "done";
+  
+const handleCompleteSprint = async () => {
+  try {
+    if (!projectId) return alert("No project selected");
+
+    // 1️⃣ Get running sprint
+    const res = await getRunningSprints(projectId);
+    const sprintId = res?.sprints?.[0]?.sprint_id;
+
+    if (!sprintId) {
+      return alert("No active sprint found!");
+    }
+    await completeSprint(sprintId);
+
+    // 2️⃣ Collect DONE & NOT DONE issues from board
+    const doneIssueIds = [];
+    const notDoneIssueIds = [];
+
+    columns.forEach((col) => {
+      col.issues.forEach((issue) => {
+        if (isDoneColumn(col.column_info.status)) {
+          doneIssueIds.push(issue.id);
+        } else {
+          notDoneIssueIds.push(issue.id);
+        }
+      });
+    });
+
+    // 3️⃣ Call backend complete sprint
+    await completeSprint(sprintId, {
+      completed_issue_ids: doneIssueIds,
+      return_to_backlog_issue_ids: notDoneIssueIds,
+    });
+
+    // 4️⃣ Refresh board
+    await loadBoard();
+
+    alert("Sprint completed successfully!");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to complete sprint!");
+  }
+};
+
 
   return (
     <div className="p-6 bg-gray-100 rounded-lg h-full flex flex-col">
@@ -143,9 +204,13 @@ export default function JiraBoard() {
         >
           + Add Column
         </button>
-        <button className="shadow-sm/20 text-green-600 hover:bg-gray-200 hover:scale-104 cursor-pointer transition px-4 py-2 rounded-lg">
-          Complete Sprint
-        </button>
+        <button
+  onClick={handleCompleteSprint}
+  className="cursor-pointer text-white bg-green-500 hover:bg-green-600 px-2 py-2 rounded-lg"
+>
+  Complete Sprint
+</button>
+
 
         </div>
         

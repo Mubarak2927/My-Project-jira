@@ -8,6 +8,7 @@ import {
   getIssues,
   startSprints,
 } from "../API/projectAPI";
+import CompleteSprint from "./CompleteSprint";
 
 export default function Sprint() {
   const { project } = useOutletContext();
@@ -301,6 +302,7 @@ export default function Sprint() {
           )}
         </div>
       )}
+        <CompleteSprint projectId={project.id}/>
     </div>
   );
 }

@@ -220,6 +220,9 @@ const Backlog = ({
                     SP: {issue.story_points}
                   </span>
                 )}
+                <span className="text-shadow-lg">
+                  {issue.status}
+                </span>
               </div>
             </div>
           </div>

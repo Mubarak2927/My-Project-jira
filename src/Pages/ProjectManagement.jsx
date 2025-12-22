@@ -91,10 +91,10 @@ const ProjectManagement = () => {
 
       {/* TABLE */}
       {!loading && (
-        <div className=" rounded-xl  border ">
+        <div className="   border ">
           <table className="w-full border-collapse text-sm">
             <thead className="bg-gray-300">
-              <tr>
+              <tr className="">
                 <th className="py-3 px-3 text-center ">SI NO</th>
                 <th className="py-3 px-3 text-center ">Project Name</th>
                 <th className="py-3 px-3 text-center ">Key</th>
