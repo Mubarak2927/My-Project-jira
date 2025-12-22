@@ -35,10 +35,10 @@
   };
 
   //  Update project
-  export const updateProject = async (projectId, projectData) => {
-    const res = await API.put(`/projects/${projectId}`, projectData);
-    return res.data;
-  };
+    export const updateProject = async (projectId, projectData) => {
+      const res = await API.put(`/projects/${projectId}`, projectData);
+      return res.data;
+    };
 
   //  Delete project
   export const deleteProject = async (projectId) => {
