@@ -14,7 +14,9 @@ import {
   User, 
   List,
   ListFilter,
-  Fullscreen
+  Fullscreen,
+  FileUp,
+  Search
 } from "lucide-react";
 import {
   deleteIssues,
@@ -24,7 +26,7 @@ import {
   sprintTaskMove,
   updateIssue,
 } from "../API/projectAPI";
-import { useOutletContext } from "react-router";
+import { useNavigate, useOutletContext } from "react-router";
 import toast, { Toaster } from "react-hot-toast";
 
 const Backlog = ({
@@ -64,6 +66,8 @@ const Backlog = ({
 
     return true;
   });
+  const navigate = useNavigate();
+
 
   const storyPointsOptions = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
 
@@ -122,22 +126,23 @@ const Backlog = ({
     <div className="flex justify-end gap-3 mt-3 mb-3">
        <button
       onClick={() => setOpenWorkItem(!openWorkItem)}
-      className="flex items-center gap-2 px-3 py-2 bg-white cursor-pointer hover:scale-104 transistion rounded shadow-sm hover:bg-gray-50"
+      className="flex items-center gap-2 px-3 py-2 bg-white cursor-pointer hover:scale-104 transistion rounded shadow-sm hover:bg-gray-100"
     >
       <Plus size={16} />
-      <span>New Work Item</span>
+      <span className="text-blue-600">New Work Item</span>
+    </button>
+     <button
+      className="flex items-center gap-2 px-3 py-2 bg-white cursor-pointer hover:scale-104 transistion rounded shadow-sm hover:bg-gray-100"
+    >
+      <FileUp size={16} className="text-green-600" /><span>Upload File</span>
     </button>
     <button
-      className="flex items-center gap-2 px-3 py-2 bg-white cursor-pointer hover:scale-104 transistion rounded shadow-sm hover:bg-gray-50"
+      className="flex items-center gap-2 px-3 py-2 bg-white cursor-pointer hover:scale-104 transistion rounded shadow-sm hover:bg-gray-100"
     
     >
-      <Trash2 size={16}/>Recycle Bin
+      <Trash2 size={16} className="text-red-600"/> <span className="text-red-600" >Recycle Bin</span>
     </button>
-    <button
-      className="flex items-center gap-2 px-3 py-2 bg-white cursor-pointer hover:scale-104 transistion rounded shadow-sm hover:bg-gray-50"
-    >
-      Bulk Upload
-    </button>
+   
       
       
           <button className=" text-blue-400 hover:bg-gray-300 h-fit px-2 py-2" title="View Options"><List /></button>
@@ -146,88 +151,113 @@ const Backlog = ({
         
 
     </div>
-    <div className="rounded-xl p-3 bg-gray-100 shadow-md/40 w-full h-[73vh]">
+    <div className="rounded-xl p-3 bg-gray-100 shadow-md/40 w-full h-[70vh]">
       <Toaster position="top-right" />
       {/* ================= HEADER ================= */}
      <div className="flex justify-between items-center mb-4">
-  <h2 className="font-semibold text-lg">Backlog</h2>
+   <div className="w-full flex  p-3 justify-between rounded-xl  bg-gray-200">
+    <div className="items-center  gap-2 flex">
+      <ListFilter className="text-gray-500" size={16}/>
+    <input
+        type="text"
+        placeholder="Filter by Keyword..." 
+        className="w-full bg-gray-200 outline-none text-sm"
+      />
+    </div>
+     <div className="text-gray-400 flex gap-3">
+      <select name="" id="">
+        <option value="">Types</option>
+      </select>
+       <select name="" id="">
+        <option value="">Assigned to</option>
+      </select>
+       <select name="" id="">
+        <option value="">Epic</option>
+      </select>
+       <select name="" id="">
+        <option value="">Types</option>
+      </select>
+     </div>
 
-  {/* 🔥 New Work Item Dropdown */}
-  <div className="relative">
-   
 
-    {openWorkItem && (
-      <div className="absolute right-0 mt-1 w-52 bg-white rounded shadow-lg z-50">
-        
-        {/* Epic */}
-        <div
-          onClick={() => {
-            setForm({ ...form, type: "epic" });
-            setOpenWorkItem(false);
-          }}
-          className="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 cursor-pointer"
-        >
-          <Crown size={16} className="text-orange-500" />
-          <span>Epic</span>
-        </div>
 
-        {/* Feature */}
-        <div
-          onClick={() => {
-            setForm({ ...form, type: "feature" });
-            setOpenWorkItem(false);
-          }}
-          className="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 cursor-pointer"
-        >
-          <Layers size={16} className="text-indigo-600" />
-          <span>Feature</span>
-        </div>
+   </div>
+      
 
-        {/* User Story */}
-        <div
-          onClick={() => {
-            setForm({ ...form, type: "story" });
-            setOpenWorkItem(false);
-          }}
-          className="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 cursor-pointer"
-        >
-          <User size={16} className="text-purple-600" />
-          <span>User Story</span>
-        </div>
+<div className="relative">
+  {openWorkItem && (
+    <div className="absolute right-80 -mt-10 w-56 bg-white rounded-lg shadow-lg z-50 ">
 
-        {/* Task */}
-        <div
-          onClick={() => {
-            setForm({ ...form, type: "task" });
-            setOpenWorkItem(false);
-          }}
-          className="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 cursor-pointer"
-        >
-          <CheckSquare size={16} className="text-blue-600" />
-          <span>Task</span>
-        </div>
-
-        {/* Bug */}
-        <div
-          onClick={() => {
-            setForm({ ...form, type: "bug" });
-            setOpenWorkItem(false);
-          }}
-          className="flex items-center gap-3 px-3 py-2 hover:bg-gray-100 cursor-pointer"
-        >
-          <Bug size={16} className="text-red-600" />
-          <span>Bug</span>
-        </div>
-
+      {/* EPIC */}
+      <div
+        onClick={() => {
+          setOpenWorkItem(false);
+          navigate(`/projects/${project.id}/work-items/new/epic`);
+        }}
+        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+      >
+        <Crown size={16} className="text-orange-500" />
+        <span>Epic</span>
       </div>
-    )}
-  </div>
+
+      {/* TASK */}
+      <div
+        onClick={() => {
+          setOpenWorkItem(false);
+          navigate(`/projects/${project.id}/work-items/new/task`);
+        }}
+        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+      >
+        <CheckSquare size={16} className="text-blue-600" />
+        <span>Task</span>
+      </div>
+
+      {/* FEATURE */}
+      <div
+        onClick={() => {
+          setOpenWorkItem(false);
+          navigate(`/projects/${project.id}/work-items/new/feature`);
+        }}
+        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+      >
+        <Layers size={16} className="text-indigo-600" />
+        <span>Feature</span>
+      </div>
+
+      {/* USER STORY */}
+      <div
+        onClick={() => {
+          setOpenWorkItem(false);
+          navigate(`/projects/${project.id}/work-items/new/story`);
+        }}
+        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+      >
+        <User size={16} className="text-purple-600" />
+        <span>User Story</span>
+      </div>
+
+      {/* BUG */}
+      <div
+        onClick={() => {
+          setOpenWorkItem(false);
+          navigate(`/projects/${project.id}/work-items/new/bug`);
+        }}
+        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+      >
+        <Bug size={16} className="text-red-600" />
+        <span>Bug</span>
+      </div>
+
+    </div>
+  )}
+</div>
+
 </div>
 
 
 
       {/* ================= CREATE ISSUE ================= */}
-      {/* <div className="shadow-sm/40 bg-gray-300 rounded-lg p-5 mb-4 space-y-2">
+      <div className="shadow-sm/40 bg-gray-300 rounded-lg p-5 mb-4 space-y-2">
         <div className="flex gap-2">
           <select
             className="shadow-md bg-gray-100 outline-none rounded px-2 py-1"
@@ -308,7 +338,7 @@ const Backlog = ({
           <Plus size={15} />
           {loading ? "Adding" : "Add Task"}
         </button>
-      </div> */}
+      </div>
 
       <p className="mt-2 mb-2 text-gray-400">Task Lists</p>
 
@@ -575,7 +605,7 @@ const Backlog = ({
       </div>
 
       {/* ================= ASSIGN SPRINT ================= */}
-      <div className="flex justify-between mt-5 items-center gap-3">
+      <div className="flex justify-between mt-40 items-center gap-3">
         <div>
           <span className="text-sm text-gray-500">
             Total Task : {filteredIssues.length} items

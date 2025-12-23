@@ -17,6 +17,7 @@ import Goals from "./ProjectPages/Goals";
 import Sprint from "./ProductBacklog/Sprint";
 import ProjectManagement from "./Pages/ProjectManagement";
 import CompleteSprint from "./ProductBacklog/CompleteSprint";
+import WorkItemCreate from "./Modal/WorkItemCreate";
 
 const App = () => {
   return (
@@ -41,6 +42,7 @@ const App = () => {
             <Route path="goals" element={<Goals />} />
             <Route path="sprints" element={<Sprint />} />
             <Route path="completesprint" element={<CompleteSprint/>} />
+            <Route path="work-items/new/:type" element={<WorkItemCreate />}/>
 
 
 

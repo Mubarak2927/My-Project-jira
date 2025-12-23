@@ -193,7 +193,7 @@ const handleCompleteSprint = async () => {
 
 
   return (
-    <div className="p-6 bg-gray-100 rounded-lg h-full flex flex-col">
+    <div className="p-6 bg-gray-100  mt-10 rounded-lg h-full flex flex-col">
       {/* ---------- HEADER ---------- */}
       <div className="flex justify-between gap-3 mb-6">
         <h1 className="text-lg text-gray-400">

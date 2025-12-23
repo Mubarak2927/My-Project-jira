@@ -67,7 +67,7 @@ const typeOfWorkData = report.types_of_work
   }));
 
   return (
-    <section className="space-y-5">
+    <section className="space-y-5 mt-10">
       {/* ================= PROJECT INFO ================= */}
       <div className="bg-gray-100 rounded-xl p-4 shadow-sm">
         <p className="text-[10px] uppercase text-gray-500 mb-1">

@@ -31,7 +31,7 @@ const CompleteSprint = () => {
   }
 
   return (
-    <div className="p-6 bg-gray-100 rounded-xl">
+    <div className="p-6 bg-gray-100 mt-10 rounded-xl">
       <h1 className="text-xl font-semibold mb-4"> Completed Sprints</h1>
 
       {sprints.length === 0 ? (
