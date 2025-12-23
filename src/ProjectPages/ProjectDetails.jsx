@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, Outlet, useParams } from "react-router-dom";
 import { getAllProjects } from "../API/projectAPI";
+import { ChevronDown, ChevronUp, Fullscreen, List, ListFilter, Option } from "lucide-react";
 
 const ProjectLayout = () => {
   const { projectId } = useParams();
@@ -53,8 +54,8 @@ const ProjectLayout = () => {
         {project.name}
       </h1>
 
-      {/* 🔥 Tabs */}
-      <div className="flex gap-6 border-b mb-6">
+
+  <div className="flex gap-6 border-b">
         <Tab to="summary" label="Summary" />
         <Tab to="backlog" label="Product Backlog Items" />
         <Tab to="sprints" label="Sprints" />
@@ -62,11 +63,11 @@ const ProjectLayout = () => {
         <Tab to="lists" label="Lists" />
         <Tab to="goals" label="Goals" />
         <Tab to="completesprint" label="Completed Sprints" />
-
-        
       </div>
+      
 
-      {/* 🔥 Child Pages */}
+
+     
       <Outlet context={{ project }} />
     </div>
   );

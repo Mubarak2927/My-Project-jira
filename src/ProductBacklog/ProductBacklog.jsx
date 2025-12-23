@@ -277,8 +277,8 @@ const ProductBacklog = () => {
     <>
       <Toaster position="top-right" />
 
-      <div className="flex gap-6">
-        <Epic
+      <div className="">
+        {/* <Epic
           epics={epics}
           selectedEpic={selectedEpic}
           onCreate={handleEpicCreate}
@@ -297,7 +297,7 @@ const ProductBacklog = () => {
               return nextEpic;
             });
           }}
-        />
+        /> */}
 
         <Backlog
           epics={epics}
