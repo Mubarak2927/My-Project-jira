@@ -18,6 +18,8 @@ import Sprint from "./ProductBacklog/Sprint";
 import ProjectManagement from "./Pages/ProjectManagement";
 import CompleteSprint from "./ProductBacklog/CompleteSprint";
 import WorkItemCreate from "./Modal/WorkItemCreate";
+import EmployeeMangement from "./Pages/EmployeeMangement";
+import EpicCreate from "./Modal/EpicCreate";
 
 const App = () => {
   return (
@@ -30,6 +32,8 @@ const App = () => {
           <Route path="/home" element={<Home />} />
 
           <Route path="/projects" element={<ProjectManagement />} />
+          <Route path="/employees" element={<EmployeeMangement />} />
+
 
           <Route path="/projects/:projectId" element={<ProjectLayout />}>
             
@@ -43,6 +47,8 @@ const App = () => {
             <Route path="sprints" element={<Sprint />} />
             <Route path="completesprint" element={<CompleteSprint/>} />
             <Route path="work-items/new/:type" element={<WorkItemCreate />}/>
+            <Route path="work-items/new/:type" element={<EpicCreate />} />
+
 
 
 

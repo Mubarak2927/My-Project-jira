@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useLocation, useOutletContext } from "react-router-dom";
 import Epic from "./Epic";
 import {
   createEpic,
@@ -39,7 +39,7 @@ const ProductBacklog = () => {
     story_points: "",
     epic_id: "",
   });
-
+const location = useLocation();
   const [form, setForm] = useState({
     type: "task",
     title: "",
@@ -77,6 +77,16 @@ const ProductBacklog = () => {
       console.error(err);
     }
   };
+  useEffect(() => {
+  if (location.state?.refreshBacklog && project?.id) {
+    loadEpics();
+    fetchIssues();
+
+    // 🔥 state clear pannum
+    window.history.replaceState({}, document.title);
+  }
+}, [location, project]);
+
 
   /* ================= CREATE EPIC ================= */
   const handleEpicCreate = async (epicData) => {
@@ -273,6 +283,8 @@ const ProductBacklog = () => {
       epic_id: issue.epic_id || "",
     });
   };
+  
+
   return (
     <>
       <Toaster position="top-right" />

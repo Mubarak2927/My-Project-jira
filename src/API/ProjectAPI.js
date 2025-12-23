@@ -169,6 +169,15 @@
     );
     return res.data;
   };
+   export const createSFeature = async (payload) => {
+    const res = await API.post(`/features/`, payload);
+    return res.data;
+  };
+  export const getFeatures = async (featureID) => {
+    const res = await API.get(`/features/feature_id=${featureID}`);
+    return res.data;
+  };
+
 
   export const sprintById = async (project_id) => {
     const res = await API.get(`/sprints/${project_id}`);

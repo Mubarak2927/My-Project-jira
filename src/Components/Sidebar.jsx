@@ -9,6 +9,7 @@ import {
   Home,
   ChevronsRight,
   ChevronsLeft,
+  Folder,
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -75,12 +76,20 @@ const Sidebar = () => {
           label="Sprints"
           collapsed={collapsed}
         />
-
         <SidebarItem
-          icon={<Users size={20} />}
-          label="Peoples"
+          icon={<Folder size={20} />}
+          label="Docs"
           collapsed={collapsed}
         />
+
+        <SidebarItem
+  icon={<Users size={20} />}
+  label="Peoples"
+  collapsed={collapsed}
+  active={location.pathname.startsWith("/employees")}
+  onClick={() => navigate("/employees")}
+/>
+
       </nav>
 
       {/* Logout */}

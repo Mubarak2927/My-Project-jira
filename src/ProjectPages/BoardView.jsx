@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Bug, BookOpen, CheckSquare, X } from "lucide-react";
+import { Bug, BookOpen, CheckSquare, X, User2 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { addColumnToBoard, completeSprint, getBoardByProjectId, getRunningSprints, sprintTaskMoveColumn } from "../API/projectAPI";
+import {
+  addColumnToBoard,
+  completeSprint,
+  getAllUsers,
+  getBoardByProjectId,
+  getRunningSprints,
+  sprintTaskMoveColumn,
+} from "../API/projectAPI";
 import toast from "react-hot-toast";
 
 /* ---------- ICON ---------- */
@@ -23,6 +30,53 @@ export default function JiraBoard() {
   const [newColumnName, setNewColumnName] = useState("");
   const [newColumnPosition, setNewColumnPosition] = useState(0);
 
+  /* ---------- USER ASSIGNMENT MODAL STATE ---------- */
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [selectedIssueId, setSelectedIssueId] = useState(null);
+  const [allUsers, setAllUsers] = useState([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const users = await getAllUsers();
+        console.log("All Users:", users); // check actual fields
+        setAllUsers(users || []);
+      } catch (err) {
+        console.error("Failed to fetch users", err);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+  const fetchAllUsers = async () => {
+    try {
+      const users = await getAllUsers();
+      console.log("All Users:", users); // check keys
+      setAllUsers(users || []);
+    } catch (err) {
+      console.error("Failed to fetch users", err);
+    }
+  };
+
+  const openUserModal = (issueId) => {
+    setSelectedIssueId(issueId);
+    fetchAllUsers();
+    setShowUserModal(true);
+  };
+
+  const handleAssignUser = (user) => {
+    // Update the column state
+    const updatedColumns = columns.map((col) => ({
+      ...col,
+      issues: col.issues.map((issue) =>
+        issue.id === selectedIssueId ? { ...issue, assignedUser: user } : issue
+      ),
+    }));
+    setColumns(updatedColumns);
+    setShowUserModal(false);
+    toast.success(`${user.name} assigned to the task`);
+  };
+
   /* ---------- LOAD BOARD ---------- */
   useEffect(() => {
     if (!projectId) return;
@@ -36,7 +90,7 @@ export default function JiraBoard() {
       let boardColumns = res?.columns?.board?.columns || [];
 
       // Ensure all columns have column_info
-      boardColumns = boardColumns.map(col => ({
+      boardColumns = boardColumns.map((col) => ({
         ...col,
         column_info: col.column_info || {
           id: col.id,
@@ -65,21 +119,36 @@ export default function JiraBoard() {
     )
       return;
 
-    const sourceCol = columns.find((c) => c.column_info.id === source.droppableId);
-    const destCol = columns.find((c) => c.column_info.id === destination.droppableId);
+    const sourceCol = columns.find(
+      (c) => c.column_info.id === source.droppableId
+    );
+    const destCol = columns.find(
+      (c) => c.column_info.id === destination.droppableId
+    );
     if (!sourceCol || !destCol) return;
 
     const movedIssue = sourceCol.issues.find((i) => i.id === draggableId);
 
     try {
-      await sprintTaskMoveColumn(draggableId, { status: destCol.column_info.status });
+      await sprintTaskMoveColumn(draggableId, {
+        status: destCol.column_info.status,
+      });
 
       const updated = columns.map((col) => {
         if (col.column_info.id === sourceCol.column_info.id) {
-          return { ...col, issues: col.issues.filter((i) => i.id !== draggableId) };
+          return {
+            ...col,
+            issues: col.issues.filter((i) => i.id !== draggableId),
+          };
         }
         if (col.column_info.id === destCol.column_info.id) {
-          return { ...col, issues: [...col.issues, { ...movedIssue, status: destCol.column_info.status }] };
+          return {
+            ...col,
+            issues: [
+              ...col.issues,
+              { ...movedIssue, status: destCol.column_info.status },
+            ],
+          };
         }
         return col;
       });
@@ -97,8 +166,8 @@ export default function JiraBoard() {
     try {
       const columnData = {
         name: newColumnName,
-        status: newColumnName,        // use column name as status
-        position: newColumnPosition,  // user-selected position
+        status: newColumnName, // use column name as status
+        position: newColumnPosition, // user-selected position
       };
 
       const res = await addColumnToBoard(projectId, columnData);
@@ -124,98 +193,89 @@ export default function JiraBoard() {
         setNewColumnName("");
         setNewColumnPosition(columns.length);
         setShowModal(false);
-        toast.success(`Column ${newCol.name} added Sucessfully`)
+        toast.success(`Column ${newCol.name} added Sucessfully`);
       }
     } catch (err) {
       console.error("Failed to add column", err);
     }
   };
   const fetchRunningSprints = async () => {
-  try {
-    if (!projectId) return;
+    try {
+      if (!projectId) return;
 
-    const res = await getRunningSprints(projectId);
-    console.log("Running Sprints:", res);
-  } catch (error) {
-    console.error("Failed to fetch running sprints:", error);
-  }
-};
-useEffect(() => {
+      const res = await getRunningSprints(projectId);
+      console.log("Running Sprints:", res);
+    } catch (error) {
+      console.error("Failed to fetch running sprints:", error);
+    }
+  };
+  useEffect(() => {
     fetchRunningSprints();
   }, []);
 
+  const isDoneColumn = (status) => status?.toLowerCase() === "done";
 
-  const isDoneColumn = (status) =>
-  status?.toLowerCase() === "done";
-  
-const handleCompleteSprint = async () => {
-  try {
-    if (!projectId) return toast.error("No project selected");
+  const handleCompleteSprint = async () => {
+    try {
+      if (!projectId) return toast.error("No project selected");
 
-    // 1️⃣ Get running sprint
-    const res = await getRunningSprints(projectId);
-    const sprintId = res?.sprints?.[0]?.sprint_id;
+      // 1️⃣ Get running sprint
+      const res = await getRunningSprints(projectId);
+      const sprintId = res?.sprints?.[0]?.sprint_id;
 
-    if (!sprintId) {
-      return toast.error("No active sprint found!");
-    }
+      if (!sprintId) {
+        return toast.error("No active sprint found!");
+      }
 
-    // 2️⃣ Collect DONE & NOT DONE issues
-    const doneIssueIds = [];
-    const notDoneIssueIds = [];
+      // 2️⃣ Collect DONE & NOT DONE issues
+      const doneIssueIds = [];
+      const notDoneIssueIds = [];
 
-    columns.forEach((col) => {
-      col.issues.forEach((issue) => {
-        if (isDoneColumn(col.column_info.status)) {
-          doneIssueIds.push(issue.id);
-        } else {
-          notDoneIssueIds.push(issue.id);
-        }
+      columns.forEach((col) => {
+        col.issues.forEach((issue) => {
+          if (isDoneColumn(col.column_info.status)) {
+            doneIssueIds.push(issue.id);
+          } else {
+            notDoneIssueIds.push(issue.id);
+          }
+        });
       });
-    });
 
-    // 3️⃣ SINGLE backend call (IMPORTANT)
-    await completeSprint(sprintId, {
-      completed_issue_ids: doneIssueIds,
-      return_to_backlog_issue_ids: notDoneIssueIds,
-    });
+      // 3️⃣ SINGLE backend call (IMPORTANT)
+      await completeSprint(sprintId, {
+        completed_issue_ids: doneIssueIds,
+        return_to_backlog_issue_ids: notDoneIssueIds,
+      });
 
-    // 4️⃣ Reload board
-    await loadBoard();
+      // 4️⃣ Reload board
+      await loadBoard();
 
-    toast.success("Sprint completed successfully!");
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to complete sprint!");
-  }
-};
-
-
+      toast.success("Sprint completed successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to complete sprint!");
+    }
+  };
 
   return (
     <div className="p-6 bg-gray-100  mt-10 rounded-lg h-full flex flex-col">
       {/* ---------- HEADER ---------- */}
       <div className="flex justify-between gap-3 mb-6">
-        <h1 className="text-lg text-gray-400">
-          Board
-        </h1>
+        <h1 className="text-lg text-gray-400">Board</h1>
         <div className="flex gap-5">
-          <button 
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 shadow-sm/20 text-blue-600 hover:bg-gray-200 hover:scale-104 cursor-pointer transition rounded-lg"
-        >
-          + Add Column
-        </button>
-        <button
-  onClick={handleCompleteSprint}
-  className="cursor-pointer text-white bg-green-500 hover:bg-green-600 px-2 py-2 rounded-lg"
->
-  Complete Sprint
-</button>
-
-
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 shadow-sm/20 text-blue-600 hover:bg-gray-200 hover:scale-104 cursor-pointer transition rounded-lg"
+          >
+            + Add Column
+          </button>
+          <button
+            onClick={handleCompleteSprint}
+            className="cursor-pointer text-white bg-green-500 hover:bg-green-600 px-2 py-2 rounded-lg"
+          >
+            Complete Sprint
+          </button>
         </div>
-        
       </div>
 
       {/* ---------- ADD COLUMN MODAL ---------- */}
@@ -266,55 +326,129 @@ const handleCompleteSprint = async () => {
         <DragDropContext onDragEnd={onDragEnd}>
           <div className="flex gap-4 overflow-x-auto">
             {columns
-              .filter(col => col.column_info) // prevent undefined error
+              .filter((col) => col.column_info) // prevent undefined error
               .map((col) => (
-              <Droppable key={col.column_info.id} droppableId={col.column_info.id}>
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className="bg-gray-200 rounded-2xl p-4 w-full h-[59vh] flex flex-col shadow-md"
-                  >
-                    <h2 className="text-gray-700 font-semibold mb-4">
-                      {col.column_info.name}
-                    </h2>
+                <Droppable
+                  key={col.column_info.id}
+                  droppableId={col.column_info.id}
+                >
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className="bg-gray-200 rounded-2xl p-4 w-full h-[59vh] flex flex-col shadow-md"
+                    >
+                      <h2 className="text-gray-700 font-semibold mb-4">
+                        {col.column_info.name}
+                      </h2>
 
-                    <div className="space-y-3 flex-1 h-[30vh] overflow-y-auto">
-                      {col.issues.length === 0 && (
-                        <p className="text-blue-400 text-sm text-center mt-10">
-                          No tasks
-                        </p>
-                      )}
+                      <div className="space-y-3 flex-1 h-[30vh] overflow-y-auto">
+                        {col.issues.length === 0 && (
+                          <p className="text-blue-400 text-sm text-center mt-10">
+                            No tasks
+                          </p>
+                        )}
 
-                      {col.issues.map((issue, index) => (
-                        <Draggable key={issue.id} draggableId={issue.id} index={index}>
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className="bg-white rounded-xl p-3 shadow hover:shadow-lg transition cursor-pointer"
-                            >
-                              <div className="flex items-center gap-2 mb-2">
-                                {getIcon(issue.type)}
-                                <span className="font-medium text-sm">{issue.name}</span>
+                        {col.issues.map((issue, index) => (
+                          <Draggable
+                            key={issue.id}
+                            draggableId={issue.id}
+                            index={index}
+                          >
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className="bg-white rounded-xl p-3 shadow hover:shadow-lg transition cursor-pointer"
+                              >
+                               <div className="flex items-center gap-2 mb-2">
+  {getIcon(issue.type)}
+  <span className="font-medium text-sm">{issue.name}</span>
+
+  {/* ASSIGN USER */}
+  {!issue.assignedUser ? (
+    <select
+      value={""}
+      onChange={(e) => {
+        const selectedUser = allUsers.find(u => u.id === e.target.value);
+        if (!selectedUser) return;
+        const updatedColumns = columns.map((col) => ({
+          ...col,
+          issues: col.issues.map((i) =>
+            i.id === issue.id ? { ...i, assignedUser: selectedUser } : i
+          ),
+        }));
+        setColumns(updatedColumns);
+        toast.success(`${selectedUser.full_name} assigned to the task`);
+      }}
+      className="ml-auto border rounded px-1 text-xs cursor-pointer"
+    >
+      <option value="">Assign</option>
+      {allUsers.map((user) => (
+        <option key={user.id} value={user.id}>
+          {user.full_name}
+        </option>
+      ))}
+    </select>
+  ) : (
+    <div
+      title={issue.assignedUser.full_name}
+      className="w-6 h-6 rounded-full bg-blue-400 text-white flex items-center justify-center text-xs ml-auto"
+    >
+      {issue.assignedUser.full_name[0].toUpperCase()}
+    </div>
+  )}
+</div>
+
+
+                                <span className="text-xs px-2 py-1 rounded-full bg-gray-100">
+                                  {issue.type?.toUpperCase()}
+                                </span>
                               </div>
-                              <span className="text-xs px-2 py-1 rounded-full bg-gray-100">
-                                {issue.type?.toUpperCase()}
-                              </span>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
+                            )}
+                          </Draggable>
+                        ))}
 
-                      {provided.placeholder}
+                        {provided.placeholder}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </Droppable>
-            ))}
+                  )}
+                </Droppable>
+              ))}
           </div>
         </DragDropContext>
+      )}
+      {showUserModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 shadow-lg relative">
+            <button
+              onClick={() => setShowUserModal(false)}
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+            >
+              <X />
+            </button>
+            <h2 className="text-lg font-semibold mb-4">Assign User</h2>
+
+            <div className="max-h-60 overflow-y-auto">
+              {allUsers.length === 0 && (
+                <p className="text-gray-400">No users found</p>
+              )}
+              {allUsers.map((user) => (
+                <div
+                  key={user.id}
+                  onClick={() => handleAssignUser(user)}
+                  className="flex items-center gap-2 p-2 hover:bg-gray-100 cursor-pointer rounded"
+                >
+                  <div className="w-6 h-6 rounded-full bg-blue-400 text-white flex items-center justify-center text-xs">
+                    {user.name[0].toUpperCase()}
+                  </div>
+                  <span>{user.full_name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
