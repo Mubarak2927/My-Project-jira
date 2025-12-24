@@ -173,10 +173,10 @@
     const res = await API.post(`/features/`, payload);
     return res.data;
   };
-  export const getFeatures = async (featureID) => {
-    const res = await API.get(`/features/feature_id=${featureID}`);
-    return res.data;
-  };
+ export const getFeature = async (featureID) => {
+  const res = await API.get(`/features/${featureID}`);
+  return res.data;
+};
 
 
   export const sprintById = async (project_id) => {

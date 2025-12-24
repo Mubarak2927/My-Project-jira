@@ -362,12 +362,14 @@ export default function JiraBoard() {
                                 {...provided.dragHandleProps}
                                 className="bg-white rounded-xl p-3 shadow hover:shadow-lg transition cursor-pointer"
                               >
-                               <div className="flex items-center gap-2 mb-2">
-  {getIcon(issue.type)}
-  <span className="font-medium text-sm">{issue.name}</span>
+                                <div className="flex items-center gap-2 mb-2">
+                                  {getIcon(issue.type)}
+                                  <span className="font-medium text-sm">
+                                    {issue.name}
+                                  </span>
 
-  {/* ASSIGN USER */}
-  {!issue.assignedUser ? (
+                                  {/* ASSIGN USER */}
+                                  {/* {!issue.assignedUser ? (
     <select
       value={""}
       onChange={(e) => {
@@ -398,9 +400,8 @@ export default function JiraBoard() {
     >
       {issue.assignedUser.full_name[0].toUpperCase()}
     </div>
-  )}
-</div>
-
+  )} */}
+                                </div>
 
                                 <span className="text-xs px-2 py-1 rounded-full bg-gray-100">
                                   {issue.type?.toUpperCase()}

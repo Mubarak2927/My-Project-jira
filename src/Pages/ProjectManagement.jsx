@@ -20,6 +20,10 @@ const ProjectManagement = () => {
 
   const navigate = useNavigate();
 
+  const loginRole = localStorage.getItem("role");
+
+  console.log(loginRole, "1234424");
+
   // ================= FETCH PROJECTS =================
   const fetchProjects = async (showLoader = false) => {
     try {
@@ -85,12 +89,15 @@ const ProjectManagement = () => {
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-black">Projects</h1>
-        <button
+        {loginRole ==='admin' &&(
+                  <button
           onClick={() => setModalOpen(true)}
           className="flex items-center gap-2 shadow-md hover:scale-105 transition px-4 py-2 rounded-lg text-blue-700"
         >
           <Plus size={16} /> Create Project
         </button>
+
+        )}
       </div>
 
       {/* LOADING */}

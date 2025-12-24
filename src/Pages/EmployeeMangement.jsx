@@ -56,7 +56,7 @@ const EmployeeMangement = () => {
             setForm(emptyForm);
             setOpenModal(true);
           }}
-          className="text-blue-600 shadow-sm/30 hover:scale-105 transition cursor-pointer px-4 py-2 rounded"
+          className="text-blue-600 bg-gray-100 hover:bg-gray-300 shadow-sm/30 hover:scale-105 transition cursor-pointer px-4 py-2 rounded"
         >
           + Create Profile
         </button>

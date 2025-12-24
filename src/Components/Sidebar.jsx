@@ -10,15 +10,20 @@ import {
   ChevronsRight,
   ChevronsLeft,
   Folder,
+  User,
 } from "lucide-react";
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const loginRole = localStorage.getItem("role");
+
   const [collapsed, setCollapsed] = useState(true);
 
   const isHomeActive = location.pathname === "/home";
+  const isDocsActive = location.pathname.startsWith("/docs");
+
 
   const isProjectManagementActive =
     location.pathname === "/projects" ||
@@ -77,18 +82,40 @@ const Sidebar = () => {
           collapsed={collapsed}
         />
         <SidebarItem
-          icon={<Folder size={20} />}
-          label="Docs"
-          collapsed={collapsed}
-        />
+  icon={<Folder size={20} />}
+  label="Docs"
+  collapsed={collapsed}
+  active={isDocsActive}
+  onClick={() => navigate("/docs")}
+/>
 
-        <SidebarItem
+
+{
+  loginRole ==='admin' &&(
+    <SidebarItem
   icon={<Users size={20} />}
   label="Peoples"
   collapsed={collapsed}
   active={location.pathname.startsWith("/employees")}
   onClick={() => navigate("/employees")}
 />
+
+  )
+}
+
+{loginRole ==='employee' &&(
+  <SidebarItem
+  icon={<User size={20} />}
+  label=" My Profile"
+  collapsed={collapsed}
+  active={location.pathname.startsWith("/employees/me")}
+  onClick={() => navigate("/employees/me")}
+/>
+
+)}
+
+
+        
 
       </nav>
 
