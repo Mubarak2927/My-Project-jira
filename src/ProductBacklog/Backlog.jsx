@@ -17,6 +17,7 @@ import {
   Fullscreen,
   FileUp,
   Search,
+  BookmarkCheck,
 } from "lucide-react";
 import {
   deleteIssues,
@@ -95,6 +96,7 @@ const Backlog = ({
     task: <CheckSquare size={14} className="text-blue-600" />,
     story: <BookOpen size={14} className="text-purple-600" />,
     bug: <Bug size={14} className="text-red-600" />,
+    subtask: <BookmarkCheck size={14} className="text-orange-600" />,
   };
 
   /* ===================== STATE ===================== */
@@ -102,6 +104,25 @@ const Backlog = ({
   const { project } = useOutletContext();
   const [openWorkItem, setOpenWorkItem] = useState(false);
   const [users, setUsers] = useState([]);
+
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(modalIssue?.name);
+  const [showParentModal, setShowParentModal] = useState(false);
+
+  const handleTitleSave = () => {
+    handleUpdate("name", editedTitle);
+    setIsEditingTitle(false);
+  };
+
+  const handleUpdate = (field, value) => {
+    // API call here da
+    console.log(field, value);
+  };
+
+  const handleAddParent = (item) => {
+    console.log("Parent added:", item);
+    setShowParentModal(false);
+  };
 
   /* ===================== TOGGLE ISSUE ===================== */
   const toggleIssue = (id) => {
@@ -160,6 +181,32 @@ const Backlog = ({
     return user ? user.full_name : "Unassigned";
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIssues.length === 0) {
+      toast.error("Select at least one issue");
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to delete selected issues?")) {
+      return;
+    }
+
+    try {
+      await Promise.all(selectedIssues.map((id) => deleteIssues(id)));
+
+      toast.success("Selected issues deleted");
+
+      // 🔥 selection clear pannanum
+      setSelectedIssues([]);
+
+      // 🔥 parent la issues refresh panra function irundha call pannunga
+      // fetchIssues();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete issues");
+    }
+  };
+
   return (
     <>
       <div className="flex justify-end gap-3 mt-3 mb-3">
@@ -183,25 +230,25 @@ const Backlog = ({
           onClick={() => toast("Coming Soon!")}
         >
           <Trash2 size={16} className="text-red-600" />
-          <span className="text-red-600">Recycle Bin</span>
+          <span className="text-red-600">Trash</span>
         </button>
 
         <button
-        onClick={() => toast("Coming Soon!")}
+          onClick={() => toast("Coming Soon!")}
           className=" text-blue-400 hover:bg-gray-300 h-fit px-2 py-2"
           title="View Options"
         >
           <List />
         </button>
         <button
-        onClick={() => toast("Coming Soon!")}
+          onClick={() => toast("Coming Soon!")}
           className="text-blue-400 hover:bg-gray-300 h-fit px-2 py-2"
           title="List Filter"
         >
           <ListFilter />
         </button>
         <button
-         onClick={() => toast("Coming Soon!")}
+          onClick={() => toast("Coming Soon!")}
           className=" text-blue-400 hover:bg-gray-300 h-fit px-2 py-2"
           title="Fullscreen Mode"
         >
@@ -232,7 +279,7 @@ const Backlog = ({
                 <option value="task">Task</option>
                 <option value="story">Story</option>
                 <option value="bug">Bug</option>
-                <option value="feature">Feature</option>
+                <option value="subtask">Subtask</option>
               </select>
 
               <select
@@ -247,7 +294,7 @@ const Backlog = ({
                 ))}
               </select>
 
-              <select
+              {/* <select
                 value={searchEpic}
                 onChange={(e) => setSearchEpic(e.target.value)}
               >
@@ -257,73 +304,84 @@ const Backlog = ({
                     {e.name}
                   </option>
                 ))}
-              </select>
+              </select> */}
             </div>
           </div>
         </div>
         <div className="relative">
-  {openWorkItem && (
-    <div className="absolute right-80 -mt-10 w-56 bg-white rounded-lg shadow-lg z-50 ">
+          {openWorkItem && (
+            <div className="absolute right-80 -mt-10 w-56 bg-white rounded-lg shadow-lg z-50 ">
+              {/* EPIC */}
+              <div
+                onClick={() => {
+                  setOpenWorkItem(false);
+                  navigate(`/projects/${project.id}/work-items/new/epic`);
+                }}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              >
+                <Crown size={16} className="text-orange-500" />
+                <span>Epic</span>
+              </div>
 
-      {/* EPIC */}
-      <div
-        onClick={() => {
-          setOpenWorkItem(false);
-          navigate(`/projects/${project.id}/work-items/new/epic`);
-        }}
-        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
-      >
-        <Crown size={16} className="text-orange-500" />
-        <span>Epic</span>
-      </div>
+              {/* TASK */}
+              <div
+                onClick={() => {
+                  setOpenWorkItem(false);
+                  navigate(`/projects/${project.id}/work-items/new/task`);
+                }}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              >
+                <CheckSquare size={16} className="text-blue-600" />
+                <span>Task</span>
+              </div>
 
-      {/* TASK */}
-      <div
-        onClick={() => {
-          setOpenWorkItem(false);
-          navigate(`/projects/${project.id}/work-items/new/task`);
-        }}
-        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
-      >
-        <CheckSquare size={16} className="text-blue-600" />
-        <span>Task</span>
-      </div>
+              {/* USER STORY */}
+              <div
+                onClick={() => {
+                  setOpenWorkItem(false);
+                  navigate(`/projects/${project.id}/work-items/new/story`);
+                }}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              >
+                <User size={16} className="text-purple-600" />
+                <span>User Story</span>
+              </div>
 
+              {/* BUG */}
+              <div
+                onClick={() => {
+                  setOpenWorkItem(false);
+                  navigate(`/projects/${project.id}/work-items/new/bug`);
+                }}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              >
+                <Bug size={16} className="text-red-600" />
+                <span>Bug</span>
+              </div>
+            </div>
+          )}
+        </div>
 
-
-      {/* USER STORY */}
-      <div
-        onClick={() => {
-          setOpenWorkItem(false);
-          navigate(`/projects/${project.id}/work-items/new/story`);
-        }}
-        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
-      >
-        <User size={16} className="text-purple-600" />
-        <span>User Story</span>
-      </div>
-
-      {/* BUG */}
-      <div
-        onClick={() => {
-          setOpenWorkItem(false);
-          navigate(`/projects/${project.id}/work-items/new/bug`);
-        }}
-        className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
-      >
-        <Bug size={16} className="text-red-600" />
-        <span>Bug</span>
-      </div>
-
-    </div>
-  )}
-</div>
-
-        <p className="mt-2 mb-2 text-gray-400">Task Lists</p>
+        <div className=" mt-2 mb-2 flex justify-between">
+          <p className=" text-gray-400">Task Lists</p>
+          <button
+            onClick={handleBulkDelete}
+            disabled={selectedIssues.length === 0}
+            className={`flex p-2 items-center gap-2 shadow-sm/50 rounded 
+    ${
+      selectedIssues.length === 0
+        ? "text-gray-400 cursor-not-allowed"
+        : "text-red-600 hover:bg-gray-200 hover:scale-105 cursor-pointer"
+    }`}
+          >
+            <Trash2 size={15} />
+            Delete
+          </button>
+        </div>
 
         {/* ================= ISSUE TABLE ================= */}
         <div className="overflow-y-auto h-[49vh] rounded">
-          <table className="w-full text-sm text-left border-collapse">
+          <table className="w-full text-sm text-left">
             <thead className="sticky top-0 bg-gray-200 z-10">
               <tr className="text-gray-700">
                 <th className="px-3 py-2">ID</th>
@@ -331,10 +389,8 @@ const Backlog = ({
                 <th className="px-3 py-2">Type</th>
                 <th className="px-3 py-2">Title</th>
                 <th className="px-3 py-2">Assigned to</th>
-                <th className="px-3 py-2">Epic</th>
-                <th className="px-3 py-2">Priority</th>
-                <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2">Actions</th>
+
+                {/* <th className="px-3 py-2">Actions</th> */}
               </tr>
             </thead>
 
@@ -364,59 +420,26 @@ const Backlog = ({
 
                   {/* TITLE */}
                   <td className="px-3 py-2 font-medium">
-                    {issue.name}
-                    {issue.type === "story" && issue.story_points && (
-                      <span className="ml-2 text-xs text-green-600">
-                        (Story_Points : {issue.story_points})
-                      </span>
-                    )}
+                    <p
+                      onClick={() => openIssueModal(issue)}
+                      className=" hover:underline cursor-pointer w-fit"
+                    >
+                      {issue.name}
+                    </p>
                   </td>
                   {/* ASSIGNED TO */}
                   <td className="px-3 py-2">
                     {getUserName(issue.assignee_id)} {/* <-- use assignee_id */}
                   </td>
 
-                  {/* EPIC */}
-                  <td className="px-3 py-2">{getEpicName(issue.epic_id)}</td>
-
-                  {/* PRIORITY */}
-                  <td className="px-3 py-2">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs capitalize ${
-                        priorityColors[issue.priority] ||
-                        "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {issue.priority}
-                    </span>
-                  </td>
-
-                  {/* STATUS */}
-                  <td className="px-3 py-2 capitalize">{issue.status}</td>
-
-                  {/* ACTIONS */}
-                  <td className="px-3 py-2 flex gap-3">
+                  {/* <td className="px-3 py-2 flex justify-center gap-3">
                     <button
-                      className="text-green-600"
-                      onClick={() => openIssueModal(issue)}
-                    >
-                      <Eye size={15} />
-                    </button>
-
-                    <button
-                      className="text-blue-600"
-                      onClick={() => openEditModal(issue)}
-                    >
-                      <SquarePen size={15} />
-                    </button>
-
-                    <button
-                      className="text-red-600"
+                      className="text-red-600 "
                       onClick={() => handleDeleteIssue(issue.id)}
                     >
                       <Trash2 size={15} />
                     </button>
-                  </td>
+                  </td> */}
                 </tr>
               ))}
 
@@ -431,166 +454,203 @@ const Backlog = ({
           </table>
         </div>
         {modalIssue && (
-          <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-lg w-[500px] max-h-[80vh] overflow-y-auto p-5 relative">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-xl w-[85vw] h-[85vh] overflow-y-auto p-6 relative">
+              {/* CLOSE */}
               <button
                 onClick={() => setModalIssue(null)}
-                className="absolute top-3 right-3 text-gray-600 hover:text-gray-800"
+                className="absolute top-4 right-4 text-gray-500 hover:text-black"
               >
                 <X size={20} />
               </button>
 
-              <h2 className="font-semibold text-lg mb-2">
-                Task Name : {modalIssue.name}
-              </h2>
+              {/* ===== TITLE EDIT ===== */}
+              <div className="mb-4">
+                <p className="text-sm text-orange-600 font-semibold">
+                  {modalIssue.type?.toUpperCase()}
+                </p>
 
-              <p className="mb-2 text-sm">
-                Description : {modalIssue.description}
-              </p>
-
-              <div className="space-y-1 text-sm">
-                <p>Type : {modalIssue.type}</p>
-                <p>Priority : {modalIssue.priority}</p>
-                <p>Status : {modalIssue.status}</p>
-                {modalIssue.story_points && (
-                  <p className="text-green-600">
-                    Story Points : {modalIssue.story_points}
-                  </p>
+                {!isEditingTitle ? (
+                  <h2
+                    className="text-xl font-semibold cursor-pointer hover:bg-gray-100 inline-block px-1"
+                    onClick={() => setIsEditingTitle(true)}
+                  >
+                    {modalIssue.name}
+                  </h2>
+                ) : (
+                  <input
+                    className="text-xl font-semibold border px-2 py-1 rounded w-full"
+                    value={editedTitle}
+                    onChange={(e) => setEditedTitle(e.target.value)}
+                    onBlur={handleTitleSave}
+                    autoFocus
+                  />
                 )}
+
+                <p className="text-sm text-gray-500 mt-1">
+                  Assigned to: {modalIssue.assignee_id || "No one selected"}
+                </p>
               </div>
 
-              {/* COMMENTS */}
-              <div className="mt-4">
-                <h3 className="font-medium mb-2">Comments</h3>
+              {/* META */}
+              <div className="grid grid-cols-2 gap-4 text-sm mb-6">
+                <p className="capitalize">
+                  <span className="font-medium">State:</span>{" "}
+                  {modalIssue.status}
+                </p>
+              </div>
 
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {issueComments.length === 0 && (
-                    <p className="text-gray-400 text-sm">No comments yet</p>
-                  )}
-                  {issueComments.map((c) => (
-                    <div key={c.id} className="p-2 bg-gray-100 rounded">
-                      {c.comment}
-                    </div>
-                  ))}
+              {/* ===== MAIN ===== */}
+              <div className="grid grid-cols-3 gap-6">
+                {/* LEFT */}
+                <div className="col-span-2">
+                  <h3 className="font-semibold mb-2">Description</h3>
+                  <p className="text-sm text-gray-700 mb-6">
+                    {modalIssue.description || "No description"}
+                  </p>
+
+                  {/* COMMENTS */}
+                  <h3 className="font-semibold mb-2">
+                    Discussion ({issueComments.length})
+                  </h3>
+
+                  <div className="space-y-2 max-h-40 overflow-y-auto mb-3">
+                    {issueComments.length === 0 && (
+                      <p className="text-gray-400 text-sm">No comments yet</p>
+                    )}
+                    {issueComments.map((c) => (
+                      <div
+                        key={c.id}
+                        className="p-2 bg-gray-100 flex justify-between rounded text-sm"
+                      >
+                        <p>{c.comment}</p>
+                        <p>{c.author_name}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      className="flex-1 px-3 py-2 border rounded"
+                      placeholder="Add a comment..."
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                    />
+                    <button
+                      onClick={handleAddComment}
+                      className="bg-blue-600 text-white px-4 rounded"
+                    >
+                      Add
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex gap-2 mt-3">
-                  <input
-                    type="text"
-                    className="flex-1 px-2 py-1 border rounded"
-                    placeholder="Add comment..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                  />
-                  <button
-                    onClick={handleAddComment}
-                    className="bg-blue-500 text-white px-3 py-1 rounded"
+                {/* RIGHT PANEL */}
+                <div>
+                  {/* PLANNING */}
+                  <h3 className="font-semibold mb-3">Planning</h3>
+
+                  {/* PRIORITY */}
+                  <label className="text-sm font-medium">Priority</label>
+                  <select
+                    className="w-full capitalize border rounded px-2 py-1 mb-3"
+                    value={modalIssue.priority}
+                    onChange={(e) => handleUpdate("priority", e.target.value)}
                   >
-                    Add
+                    {["high", "highest", "medium", "low", "lowest"].map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* DATES */}
+                  <label className="text-sm font-medium">Start Date</label>
+                  <input
+                    type="date"
+                    className="w-full border rounded px-2 py-1 mb-3"
+                    value={modalIssue.start_date || ""}
+                    onChange={(e) => handleUpdate("start_date", e.target.value)}
+                  />
+
+                  <label className="text-sm font-medium">Target Date</label>
+                  <input
+                    type="date"
+                    className="w-full border rounded px-2 py-1 mb-4"
+                    value={modalIssue.target_date || ""}
+                    onChange={(e) =>
+                      handleUpdate("target_date", e.target.value)
+                    }
+                  />
+
+                  {/* STORY POINTS */}
+                  <label className="text-sm font-medium">Story Points</label>
+                  <select
+                    className="w-full border rounded px-2 py-1"
+                    value={modalIssue.story_points || ""}
+                    onChange={(e) =>
+                      handleUpdate("story_points", e.target.value)
+                    }
+                  >
+                    <option value="">—</option>
+                    {[0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89].map((sp) => (
+                      <option key={sp} value={sp}>
+                        {sp}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* RELATED WORK */}
+                  <h3 className="font-semibold mt-6 mb-2">Related Work</h3>
+                  <button
+                    className="text-blue-600 text-sm underline"
+                    onClick={() => setShowParentModal(true)}
+                  >
+                    Add parent work item
                   </button>
                 </div>
               </div>
+
+              {/* ===== ADD PARENT MODAL ===== */}
+              {/* {showParentModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-60">
+          <div className="bg-white w-[400px] rounded-lg p-4">
+            <h3 className="font-semibold mb-3">Add Parent</h3>
+
+            <label className="text-sm font-medium">Parent Type</label>
+            <select className="w-full border rounded px-2 py-1 mb-3">
+              <option>Epic</option>
+              <option>Story</option>
+              <option>Task</option>
+            </select>
+
+            <label className="text-sm font-medium">
+              Select from Backlog
+            </label>
+            <div className="border rounded max-h-40 overflow-y-auto">
+              {backlogItems.map(item => (
+                <div
+                  key={item.id}
+                  className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+                  onClick={() => handleAddParent(item)}
+                >
+                  [{item.type}] {item.name}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setShowParentModal(false)}
+                className="px-3 py-1 border rounded"
+              >
+                Cancel
+              </button>
             </div>
           </div>
-        )}
-        {editIssue && (
-          <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-lg w-[500px] p-5 relative">
-              <button
-                onClick={() => setEditIssue(null)}
-                className="absolute top-3 right-3 text-gray-600"
-              >
-                <X size={20} />
-              </button>
-
-              <h2 className="font-semibold text-lg mb-3">Edit Task</h2>
-
-              {/* TITLE */}
-              <input
-                className="w-full border p-2 rounded mb-2"
-                value={editForm.name}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, name: e.target.value })
-                }
-                placeholder="Title"
-              />
-
-              {/* DESCRIPTION */}
-              <textarea
-                className="w-full border p-2 rounded mb-2"
-                value={editForm.description}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, description: e.target.value })
-                }
-                placeholder="Description"
-              />
-
-              {/* TYPE */}
-              <select
-                className="w-full border p-2 rounded mb-2"
-                value={editForm.type}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, type: e.target.value })
-                }
-              >
-                <option value="task">Task</option>
-                <option value="story">Story</option>
-                <option value="bug">Bug</option>
-              </select>
-
-              {/* 🔥 STORY POINTS – ONLY FOR STORY */}
-              {editForm.type === "story" && (
-                <input
-                  type="number"
-                  className="w-full border p-2 rounded mb-2"
-                  placeholder="Story Points"
-                  value={editForm.story_points || ""}
-                  onChange={(e) =>
-                    setEditForm({
-                      ...editForm,
-                      story_points: e.target.value,
-                    })
-                  }
-                />
-              )}
-              {/* ASSIGNEE */}
-              <select
-                className="w-full border p-2 rounded mb-2"
-                value={editForm.assignee_id || ""}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, assignee_id: e.target.value })
-                }
-              >
-                <option value="">Unassigned</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.full_name}
-                  </option>
-                ))}
-              </select>
-
-              {/* PRIORITY */}
-              <select
-                className="w-full border p-2 rounded mb-2"
-                value={editForm.priority}
-                onChange={(e) =>
-                  setEditForm({ ...editForm, priority: e.target.value })
-                }
-              >
-                <option value="highest">Highest</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-                <option value="lowest">Lowest</option>
-              </select>
-
-              {/* SAVE */}
-              <button
-                onClick={handleUpdateIssue}
-                className="bg-green-500 text-white px-4 py-2 rounded w-full"
-              >
-                Save Changes
-              </button>
+        </div>
+      )} */}
             </div>
           </div>
         )}

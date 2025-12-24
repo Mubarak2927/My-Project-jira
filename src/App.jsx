@@ -22,6 +22,7 @@ import EmployeeMangement from "./Pages/EmployeeMangement";
 import EpicCreate from "./Modal/EpicCreate";
 import MyProfile from "./Pages/MyProfile";
 import Docs from "./Pages/Docs";
+import RecycleBin from "./RecycleBin";
 
 const App = () => {
   return (
@@ -35,6 +36,7 @@ const App = () => {
   <Route path="/projects" element={<ProjectManagement />} />
   <Route path="/employees" element={<EmployeeMangement />} />
   <Route path="/employees/me" element={<MyProfile />} />
+<Route path="/recycle-bin" element={<RecycleBin />} />
 
   {/* ✅ GLOBAL DOCS */}
   <Route path="/docs" element={<Docs />} />

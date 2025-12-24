@@ -156,6 +156,7 @@ const location = useLocation();
         priority: "",
         storyPoints: "",
         sprintId: "",
+        subtask:'',
       });
     } catch (err) {
       console.error(err);
@@ -213,6 +214,7 @@ const location = useLocation();
       type: editForm.type,
       priority: editForm.priority,
       epic_id: editForm.epic_id,
+      subtask:editForm.subtask,
     };
 
     // ✅ Only include story_points if type is story

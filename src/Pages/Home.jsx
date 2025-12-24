@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
 import DigitalyLogo from "../assets/Digi.png";
+import { Clock } from "lucide-react";
 
 const apps = [
   {
@@ -67,7 +68,7 @@ const Home = () => {
 
           <p>{formattedDate}</p>
           <div>
-            <p>{formattedTime}</p>
+            <p className="flex  items-center gap-2"><Clock size={16} className="text-blue-600"/>{formattedTime}</p>
           </div>
         </div>
       </div>
@@ -93,7 +94,6 @@ const Home = () => {
                 </div>
               </div>
 
-              {/* Coming Soon Overlay */}
               {comingSoonApp === app.name && (
                 <div className="absolute inset-0 bg-white bg-opacity-50 flex justify-center items-center  text-lg rounded-lg">
                   Coming Soon.....

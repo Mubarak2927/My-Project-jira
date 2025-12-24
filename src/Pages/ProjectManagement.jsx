@@ -64,7 +64,7 @@ const ProjectManagement = () => {
     try {
       await deleteProject(projectId);
       setProjects((prev) => prev.filter((p) => p.id !== projectId));
-      toast.success("Project Deleted Successfully");
+      toast.success("Project Moved Recycle bin");
     } catch {
       toast.error("Delete failed");
     }
@@ -75,7 +75,6 @@ const ProjectManagement = () => {
     setSelectedProject(project);
     setEditModalOpen(true);
   };
-
   const handleUpdateProject = (updatedProject) => {
     setProjects((prev) =>
       prev.map((p) => (p.id === updatedProject.id ? updatedProject : p))
@@ -88,18 +87,27 @@ const ProjectManagement = () => {
 
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-black">Projects</h1>
-        {loginRole ==='admin' &&(
-                  <button
-          onClick={() => setModalOpen(true)}
-          className="flex items-center gap-2 shadow-md hover:scale-105 transition px-4 py-2 rounded-lg text-blue-700"
-        >
-          <Plus size={16} /> Create Project
-        </button>
+        <div>
+          <h1 className="text-2xl font-semibold text-black">Projects</h1>
+        </div>
+        <div className="flex gap-4">
+         <button
+  onClick={() => navigate("/recycle-bin")}
+  className="flex items-center cursor-pointer text-red-600 gap-2 shadow-md hover:scale-105 transition px-4 py-2 rounded-lg "
+>
+  <Trash2 size={16} /> Recycle Bin
+</button>
 
-        )}
+          {loginRole === "admin" && (
+            <button
+              onClick={() => setModalOpen(true)}
+              className="flex items-center gap-2 shadow-md hover:scale-105 transition px-4 py-2 rounded-lg text-blue-700"
+            >
+              <Plus size={16} /> Create Project
+            </button>
+          )}
+        </div>
       </div>
-
       {/* LOADING */}
       {loading && (
         <div className="py-10 text-center text-gray-500">
@@ -145,7 +153,9 @@ const ProjectManagement = () => {
                   </td>
 
                   <td className="py-3 text-center">{project.key}</td>
-                  <td className="py-3 text-center">{project.description || "—"}</td>
+                  <td className="py-3 text-center">
+                    {project.description || "—"}
+                  </td>
 
                   <td className="py-3 flex gap-2.5 text-center justify-center">
                     <Pencil

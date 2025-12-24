@@ -76,6 +76,14 @@ const typeOfWorkData = report.types_of_work
         <p className="text-lg font-semibold">
           {report.project_summary.name}
         </p>
+        <div>
+          <p className="text-[10px] uppercase text-gray-500 mb-1 mt-5">Project Key</p>
+           <p className="text-lg font-semibold">
+          {project.key}
+        </p>
+
+        </div>
+        
       </div>
 
       {/* ================= TOP SUMMARY ================= */}

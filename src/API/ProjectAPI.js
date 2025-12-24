@@ -409,3 +409,34 @@
     throw error;
   }
 };
+
+// ================= RECYCLE BIN =================
+
+// Get deleted items by project
+export const getRecycleBinItems = async (project_id) => {
+  const res = await API.get("/recycle-bin/", {
+    params: { project_id },
+  });
+  return res.data;
+};
+
+
+// Restore item
+export const restoreRecycleItem = async (item_type, item_id) => {
+  const res = await API.post(
+    `/recycle-bin/restore/${item_type}/${item_id}`
+  );
+  return res.data;
+};
+
+
+// Permanent delete
+export const permanentDeleteRecycleItem = async (
+  item_type,
+  item_id
+) => {
+  const res = await API.delete(
+    `/recycle-bin/permanent/${item_type}/${item_id}`
+  );
+  return res.data;
+};
