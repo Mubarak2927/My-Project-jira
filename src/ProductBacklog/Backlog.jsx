@@ -18,6 +18,8 @@ import {
   FileUp,
   Search,
   BookmarkCheck,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import {
   deleteIssues,
@@ -62,6 +64,8 @@ const Backlog = ({
   const [searchType, setSearchType] = useState("");
   const [searchAssignee, setSearchAssignee] = useState("");
   const [searchEpic, setSearchEpic] = useState("");
+  const [originalIssue, setOriginalIssue] = useState(null);
+
 
   /* ===================== FILTERED ISSUES ===================== */
   const filteredIssues = issues.filter((issue) => {
@@ -87,6 +91,24 @@ const Backlog = ({
 
     return true;
   });
+  useEffect(() => {
+  if (modalIssue) {
+    const snapshot = {
+      name: modalIssue.name || "",
+      priority: modalIssue.priority || "",
+      start_date: modalIssue.start_date || "",
+      target_date: modalIssue.target_date || "",
+      story_points: modalIssue.story_points || "",
+      status: modalIssue.status || "",
+      assignee_id: modalIssue.assignee_id || "",
+    };
+
+    setIssueForm(snapshot);
+    setOriginalIssue(snapshot); // 🔥 BACKUP
+    setEditedTitle(modalIssue.name);
+  }
+}, [modalIssue]);
+
 
   const navigate = useNavigate();
 
@@ -265,6 +287,33 @@ const Backlog = ({
       toast.error("Fullscreen not supported");
     }
   };
+  const handleSaveIssue = async () => {
+  const ok = window.confirm("Do you want to save changes?");
+  if (!ok) return;
+
+  try {
+    await updateIssue(modalIssue.id, issueForm);
+
+    setModalIssue((prev) => ({ ...prev, ...issueForm }));
+    setOriginalIssue(issueForm); // new state becomes baseline
+
+    toast.success("Issue updated successfully");
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to save issue");
+  }
+};
+
+const handleRestoreIssue = () => {
+  if (!originalIssue) return;
+
+  setIssueForm(originalIssue);
+  setModalIssue((prev) => ({ ...prev, ...originalIssue }));
+
+  toast("Changes restored", { icon: "↩️" });
+};
+
+
 
   return (
     <>
@@ -311,7 +360,7 @@ const Backlog = ({
           className="text-blue-400 hover:bg-gray-300 cursor-pointer h-fit px-2 py-2 rounded"
           title="Fullscreen Mode"
         >
-          {isFullscreen ? <X /> : <Fullscreen />}
+          {isFullscreen ? <Minimize2 /> : <Maximize2  />}
         </button>
       </div>
       <div className="rounded-xl p-3 bg-gray-100 shadow-md/40 w-full h-[70vh]">
@@ -510,7 +559,7 @@ const Backlog = ({
     <div className="bg-white rounded-2xl shadow-2xl w-[90vw] h-[90vh] flex flex-col overflow-hidden">
 
       {/* ===== HEADER ===== */}
-      <div className="sticky top-0 z-10 bg-white border-b px-6 py-4 flex justify-between items-start">
+      <div className="sticky top-0 z-10 bg-white  px-6 py-4 flex justify-between items-start">
         <div>
           <p className="text-lg font-semibold text-orange-600 tracking-wide">
             {modalIssue.type?.toUpperCase()}
@@ -534,20 +583,52 @@ const Backlog = ({
             />
           )}
 
-          <p className="text-sm text-gray-500 mt-1">
-            Assigned to:{" "}
-            <span className="font-medium">
-              {modalIssue.assignee_id || "Unassigned"}
-            </span>
-          </p>
-        </div>
+         <div className="mt-2">
+  <label className="text-xs font-medium text-gray-600">
+    Assigned To
+  </label>
 
-        <button
-          onClick={() => setModalIssue(null)}
-          className="text-gray-500 hover:text-black"
-        >
-          <X size={22} />
-        </button>
+  <select
+    className="w-fit mt-1 border rounded px-2 py-1 text-sm"
+    value={issueForm.assignee_id || ""}
+    onChange={(e) =>
+      handleUpdate("assignee_id", e.target.value)
+    }
+  >
+    <option value="">Unassigned</option>
+
+    {users.map((user) => (
+      <option key={user._id} value={user._id}>
+        {user.full_name}
+      </option>
+    ))}
+  </select>
+</div>
+
+        </div>
+        <div className="flex gap-2 items-center">
+  <button
+    onClick={handleRestoreIssue}
+    className="px-3 py-1 text-sm border rounded hover:bg-gray-100"
+  >
+    Restore
+  </button>
+
+  <button
+    onClick={handleSaveIssue}
+    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+  >
+    Save
+  </button>
+
+  <button
+    onClick={() => setModalIssue(null)}
+    className="text-gray-500 hover:text-black ml-2"
+  >
+    <X size={22} />
+  </button>
+</div>
+
       </div>
 
       {/* ===== BODY ===== */}
@@ -570,23 +651,7 @@ const Backlog = ({
               Discussion ({issueComments.length})
             </h3>
 
-            <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
-              {issueComments.length === 0 && (
-                <p className="text-sm text-gray-400">No comments yet</p>
-              )}
-
-              {issueComments.map((c) => (
-                <div
-                  key={c.id}
-                  className="bg-gray-100 rounded-lg p-3 text-sm"
-                >
-                  <p className="text-gray-800">{c.comment}</p>
-                  <p className="text-xs text-gray-500 mt-1 text-right">
-                    — {c.author_name}
-                  </p>
-                </div>
-              ))}
-            </div>
+            
 
             {/* Add comment */}
             <div className="flex gap-2 mt-3">
@@ -604,8 +669,26 @@ const Backlog = ({
                 Add
               </button>
             </div>
+            <div className="space-y-3 max-h-56 mt-5 overflow-y-auto pr-1">
+              {issueComments.length === 0 && (
+                <p className="text-sm text-gray-400">No comments yet</p>
+              )}
+
+              {issueComments.map((c) => (
+                <div
+                  key={c.id}
+                  className="bg-gray-100 rounded-lg p-3 text-sm"
+                >
+                  <p className="text-gray-800">{c.comment}</p>
+                  <p className="text-xs text-gray-500 mt-1 text-right">
+                    — {c.author_name}
+                  </p>
+                </div>
+              ))}
+            </div>  
           </div>
         </div>
+        
 
         {/* ===== RIGHT PANEL ===== */}
         <div className="bg-gray-50 rounded-xl p-4 space-y-4 h-fit">
