@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useOutletContext } from "react-router-dom";
-import Epic from "./Epic";
 import {
   createEpic,
   getEpic,
@@ -22,8 +21,6 @@ import Backlog from "./Backlog";
 const ProductBacklog = () => {
   const { project } = useOutletContext();
 
-  const [epics, setEpics] = useState([]);
-  const [selectedEpic, setSelectedEpic] = useState(null);
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedIssues, setSelectedIssues] = useState([]);
@@ -50,20 +47,6 @@ const location = useLocation();
     sprintId: "",
   });
 
-  /* ================= LOAD EPICS ================= */
-  useEffect(() => {
-    if (project?.id) loadEpics();
-  }, [project]);
-
-  const loadEpics = async () => {
-    try {
-      const data = await getEpic(project.id);
-      setEpics(data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   /* ================= LOAD ISSUES ================= */
   useEffect(() => {
     if (project?.id) fetchIssues();
@@ -79,50 +62,12 @@ const location = useLocation();
   };
   useEffect(() => {
   if (location.state?.refreshBacklog && project?.id) {
-    loadEpics();
     fetchIssues();
 
     // 🔥 state clear pannum
     window.history.replaceState({}, document.title);
   }
 }, [location, project]);
-
-
-  /* ================= CREATE EPIC ================= */
-  const handleEpicCreate = async (epicData) => {
-    try {
-      const payload = {
-        ...epicData,
-        project_id: project.id,
-      };
-      const newEpic = await createEpic(payload);
-      toast.success("Epic Created Successfully");
-      setEpics((prev) => [...prev, newEpic]);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  /* ================= DELETE EPIC ================= */
-  const handleDeleteEpic = async (epicId) => {
-    if (!window.confirm("Delete this epic?")) return;
-
-    try {
-      await deleteEpic(epicId);
-      toast.success("Epic Deleted");
-
-      setEpics((prev) => prev.filter((e) => e.id !== epicId));
-
-      // selected epic delete aana clear pannum
-      if (selectedEpic?.id === epicId) {
-        setSelectedEpic(null);
-        setForm((prev) => ({ ...prev, epicId: "" }));
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to delete epic");
-    }
-  };
 
   /* ================= CREATE ISSUE ================= */
   const handleAdd = async () => {
@@ -183,25 +128,6 @@ const location = useLocation();
     } catch (err) {
       console.error(err);
       toast.error("Failed to assign sprint");
-    }
-  };
-  /* ================= EDIT EPIC ================= */
-  const handleEditEpic = async (epicId, data) => {
-    try {
-      const updatedEpic = await updateEpic(epicId, data);
-
-      toast.success("Epic Updated");
-
-      setEpics((prev) =>
-        prev.map((epic) => (epic.id === epicId ? updatedEpic : epic))
-      );
-
-      if (selectedEpic?.id === epicId) {
-        setSelectedEpic(updatedEpic);
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update epic");
     }
   };
 
@@ -292,30 +218,8 @@ const location = useLocation();
       <Toaster position="top-right" />
 
       <div className="">
-        {/* <Epic
-          epics={epics}
-          selectedEpic={selectedEpic}
-          onCreate={handleEpicCreate}
-          onDeleteEpic={handleDeleteEpic}
-          onEditEpic={handleEditEpic}
-          onSelectEpic={(epic) => {
-            setSelectedEpic((prev) => {
-              const isSame = prev?.id === epic?.id;
-              const nextEpic = isSame ? null : epic;
-
-              setForm((prevForm) => ({
-                ...prevForm,
-                epicId: nextEpic ? nextEpic.id : "",
-              }));
-
-              return nextEpic;
-            });
-          }}
-        /> */}
 
         <Backlog
-          epics={epics}
-          selectedEpic={selectedEpic}
           issues={issues}
           form={form}
           setForm={setForm}

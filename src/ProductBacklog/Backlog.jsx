@@ -108,15 +108,59 @@ const Backlog = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(modalIssue?.name);
   const [showParentModal, setShowParentModal] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [issueForm, setIssueForm] = useState({});
 
-  const handleTitleSave = () => {
-    handleUpdate("name", editedTitle);
-    setIsEditingTitle(false);
+  useEffect(() => {
+    if (modalIssue) {
+      setIssueForm({
+        name: modalIssue.name || "",
+        priority: modalIssue.priority || "",
+        start_date: modalIssue.start_date || "",
+        target_date: modalIssue.target_date || "",
+        story_points: modalIssue.story_points || "",
+        status: modalIssue.status || "",
+        assignee_id: modalIssue.assignee_id || "",
+      });
+      setEditedTitle(modalIssue.name);
+    }
+  }, [modalIssue]);
+
+  const handleUpdate = async (field, value) => {
+    try {
+      const payload = { [field]: value };
+
+      // optimistic UI
+      setIssueForm((prev) => ({ ...prev, [field]: value }));
+      setModalIssue((prev) => ({ ...prev, [field]: value }));
+
+      await updateIssue(modalIssue.id, payload);
+
+      toast.success("Issue updated");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update issue");
+    }
   };
 
-  const handleUpdate = (field, value) => {
-    // API call here da
-    console.log(field, value);
+  const handleTitleSave = async () => {
+    if (editedTitle === modalIssue.name) {
+      setIsEditingTitle(false);
+      return;
+    }
+
+    try {
+      await updateIssue(modalIssue.id, { name: editedTitle });
+
+      setModalIssue((prev) => ({ ...prev, name: editedTitle }));
+      setIssueForm((prev) => ({ ...prev, name: editedTitle }));
+
+      toast.success("Title updated");
+    } catch (err) {
+      toast.error("Failed to update title");
+    }
+
+    setIsEditingTitle(false);
   };
 
   const handleAddParent = (item) => {
@@ -207,6 +251,21 @@ const Backlog = ({
     }
   };
 
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+        setIsFullscreen(true);
+      } else {
+        await document.exitFullscreen();
+        setIsFullscreen(false);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Fullscreen not supported");
+    }
+  };
+
   return (
     <>
       <div className="flex justify-end gap-3 mt-3 mb-3">
@@ -248,11 +307,11 @@ const Backlog = ({
           <ListFilter />
         </button>
         <button
-          onClick={() => toast("Coming Soon!")}
-          className=" text-blue-400 hover:bg-gray-300 h-fit px-2 py-2"
+          onClick={toggleFullscreen}
+          className="text-blue-400 hover:bg-gray-300 cursor-pointer h-fit px-2 py-2 rounded"
           title="Fullscreen Mode"
         >
-          <Fullscreen />
+          {isFullscreen ? <X /> : <Fullscreen />}
         </button>
       </div>
       <div className="rounded-xl p-3 bg-gray-100 shadow-md/40 w-full h-[70vh]">
@@ -375,7 +434,6 @@ const Backlog = ({
     }`}
           >
             <Trash2 size={15} />
-            Delete
           </button>
         </div>
 
@@ -389,8 +447,6 @@ const Backlog = ({
                 <th className="px-3 py-2">Type</th>
                 <th className="px-3 py-2">Title</th>
                 <th className="px-3 py-2">Assigned to</th>
-
-                {/* <th className="px-3 py-2">Actions</th> */}
               </tr>
             </thead>
 
@@ -426,26 +482,22 @@ const Backlog = ({
                     >
                       {issue.name}
                     </p>
+                    {issue.type === "story" && issue.story_points && (
+                      <span className="ml-2 text-xs text-green-600">
+                        (Story_Points : {issue.story_points})
+                      </span>
+                    )}
                   </td>
                   {/* ASSIGNED TO */}
                   <td className="px-3 py-2">
                     {getUserName(issue.assignee_id)} {/* <-- use assignee_id */}
                   </td>
-
-                  {/* <td className="px-3 py-2 flex justify-center gap-3">
-                    <button
-                      className="text-red-600 "
-                      onClick={() => handleDeleteIssue(issue.id)}
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </td> */}
                 </tr>
               ))}
 
               {filteredIssues.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="text-center py-6 text-gray-400">
+                  <td colSpan="5" className="text-center py-6 text-gray-400">
                     No issues found
                   </td>
                 </tr>
@@ -454,206 +506,202 @@ const Backlog = ({
           </table>
         </div>
         {modalIssue && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-xl w-[85vw] h-[85vh] overflow-y-auto p-6 relative">
-              {/* CLOSE */}
-              <button
-                onClick={() => setModalIssue(null)}
-                className="absolute top-4 right-4 text-gray-500 hover:text-black"
-              >
-                <X size={20} />
-              </button>
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-2xl shadow-2xl w-[90vw] h-[90vh] flex flex-col overflow-hidden">
 
-              {/* ===== TITLE EDIT ===== */}
-              <div className="mb-4">
-                <p className="text-sm text-orange-600 font-semibold">
-                  {modalIssue.type?.toUpperCase()}
-                </p>
+      {/* ===== HEADER ===== */}
+      <div className="sticky top-0 z-10 bg-white border-b px-6 py-4 flex justify-between items-start">
+        <div>
+          <p className="text-lg font-semibold text-orange-600 tracking-wide">
+            {modalIssue.type?.toUpperCase()}
+          </p>
 
-                {!isEditingTitle ? (
-                  <h2
-                    className="text-xl font-semibold cursor-pointer hover:bg-gray-100 inline-block px-1"
-                    onClick={() => setIsEditingTitle(true)}
-                  >
-                    {modalIssue.name}
-                  </h2>
-                ) : (
-                  <input
-                    className="text-xl font-semibold border px-2 py-1 rounded w-full"
-                    value={editedTitle}
-                    onChange={(e) => setEditedTitle(e.target.value)}
-                    onBlur={handleTitleSave}
-                    autoFocus
-                  />
-                )}
+          <p>Task Name</p>
+          {!isEditingTitle ? (
+            <h2
+              className="text-2xl w-fit font-semibold hover:bg-gray-100 px-1 cursor-pointer"
+              onClick={() => setIsEditingTitle(true)}
+            >
+              {modalIssue.name}
+            </h2>
+          ) : (
+            <input
+              className="text-2xl font-semibold border rounded px-2 py-1 w-full"
+              value={editedTitle}
+              onChange={(e) => setEditedTitle(e.target.value)}
+              onBlur={handleTitleSave}
+              autoFocus
+            />
+          )}
 
-                <p className="text-sm text-gray-500 mt-1">
-                  Assigned to: {modalIssue.assignee_id || "No one selected"}
-                </p>
-              </div>
+          <p className="text-sm text-gray-500 mt-1">
+            Assigned to:{" "}
+            <span className="font-medium">
+              {modalIssue.assignee_id || "Unassigned"}
+            </span>
+          </p>
+        </div>
 
-              {/* META */}
-              <div className="grid grid-cols-2 gap-4 text-sm mb-6">
-                <p className="capitalize">
-                  <span className="font-medium">State:</span>{" "}
-                  {modalIssue.status}
-                </p>
-              </div>
+        <button
+          onClick={() => setModalIssue(null)}
+          className="text-gray-500 hover:text-black"
+        >
+          <X size={22} />
+        </button>
+      </div>
 
-              {/* ===== MAIN ===== */}
-              <div className="grid grid-cols-3 gap-6">
-                {/* LEFT */}
-                <div className="col-span-2">
-                  <h3 className="font-semibold mb-2">Description</h3>
-                  <p className="text-sm text-gray-700 mb-6">
-                    {modalIssue.description || "No description"}
-                  </p>
+      {/* ===== BODY ===== */}
+      <div className="flex-1 overflow-y-auto p-6 grid grid-cols-3 gap-6">
 
-                  {/* COMMENTS */}
-                  <h3 className="font-semibold mb-2">
-                    Discussion ({issueComments.length})
-                  </h3>
+        {/* ===== LEFT CONTENT ===== */}
+        <div className="col-span-2 space-y-6">
 
-                  <div className="space-y-2 max-h-40 overflow-y-auto mb-3">
-                    {issueComments.length === 0 && (
-                      <p className="text-gray-400 text-sm">No comments yet</p>
-                    )}
-                    {issueComments.map((c) => (
-                      <div
-                        key={c.id}
-                        className="p-2 bg-gray-100 flex justify-between rounded text-sm"
-                      >
-                        <p>{c.comment}</p>
-                        <p>{c.author_name}</p>
-                      </div>
-                    ))}
-                  </div>
+          {/* Description */}
+          <div>
+            <h3 className="font-semibold mb-1">Description</h3>
+            <p className="text-sm text-gray-700 bg-gray-50 p-4 rounded-lg">
+              {modalIssue.description || "No description provided"}
+            </p>
+          </div>
 
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      className="flex-1 px-3 py-2 border rounded"
-                      placeholder="Add a comment..."
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                    />
-                    <button
-                      onClick={handleAddComment}
-                      className="bg-blue-600 text-white px-4 rounded"
-                    >
-                      Add
-                    </button>
-                  </div>
-                </div>
+          {/* Comments */}
+          <div>
+            <h3 className="font-semibold mb-2">
+              Discussion ({issueComments.length})
+            </h3>
 
-                {/* RIGHT PANEL */}
-                <div>
-                  {/* PLANNING */}
-                  <h3 className="font-semibold mb-3">Planning</h3>
+            <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
+              {issueComments.length === 0 && (
+                <p className="text-sm text-gray-400">No comments yet</p>
+              )}
 
-                  {/* PRIORITY */}
-                  <label className="text-sm font-medium">Priority</label>
-                  <select
-                    className="w-full capitalize border rounded px-2 py-1 mb-3"
-                    value={modalIssue.priority}
-                    onChange={(e) => handleUpdate("priority", e.target.value)}
-                  >
-                    {["high", "highest", "medium", "low", "lowest"].map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* DATES */}
-                  <label className="text-sm font-medium">Start Date</label>
-                  <input
-                    type="date"
-                    className="w-full border rounded px-2 py-1 mb-3"
-                    value={modalIssue.start_date || ""}
-                    onChange={(e) => handleUpdate("start_date", e.target.value)}
-                  />
-
-                  <label className="text-sm font-medium">Target Date</label>
-                  <input
-                    type="date"
-                    className="w-full border rounded px-2 py-1 mb-4"
-                    value={modalIssue.target_date || ""}
-                    onChange={(e) =>
-                      handleUpdate("target_date", e.target.value)
-                    }
-                  />
-
-                  {/* STORY POINTS */}
-                  <label className="text-sm font-medium">Story Points</label>
-                  <select
-                    className="w-full border rounded px-2 py-1"
-                    value={modalIssue.story_points || ""}
-                    onChange={(e) =>
-                      handleUpdate("story_points", e.target.value)
-                    }
-                  >
-                    <option value="">—</option>
-                    {[0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89].map((sp) => (
-                      <option key={sp} value={sp}>
-                        {sp}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* RELATED WORK */}
-                  <h3 className="font-semibold mt-6 mb-2">Related Work</h3>
-                  <button
-                    className="text-blue-600 text-sm underline"
-                    onClick={() => setShowParentModal(true)}
-                  >
-                    Add parent work item
-                  </button>
-                </div>
-              </div>
-
-              {/* ===== ADD PARENT MODAL ===== */}
-              {/* {showParentModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-60">
-          <div className="bg-white w-[400px] rounded-lg p-4">
-            <h3 className="font-semibold mb-3">Add Parent</h3>
-
-            <label className="text-sm font-medium">Parent Type</label>
-            <select className="w-full border rounded px-2 py-1 mb-3">
-              <option>Epic</option>
-              <option>Story</option>
-              <option>Task</option>
-            </select>
-
-            <label className="text-sm font-medium">
-              Select from Backlog
-            </label>
-            <div className="border rounded max-h-40 overflow-y-auto">
-              {backlogItems.map(item => (
+              {issueComments.map((c) => (
                 <div
-                  key={item.id}
-                  className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
-                  onClick={() => handleAddParent(item)}
+                  key={c.id}
+                  className="bg-gray-100 rounded-lg p-3 text-sm"
                 >
-                  [{item.type}] {item.name}
+                  <p className="text-gray-800">{c.comment}</p>
+                  <p className="text-xs text-gray-500 mt-1 text-right">
+                    — {c.author_name}
+                  </p>
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-end gap-2 mt-4">
+            {/* Add comment */}
+            <div className="flex gap-2 mt-3">
+              <input
+                type="text"
+                className="flex-1 px-3 py-2 border rounded-lg text-sm"
+                placeholder="Add a comment…"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+              />
               <button
-                onClick={() => setShowParentModal(false)}
-                className="px-3 py-1 border rounded"
+                onClick={handleAddComment}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-lg text-sm"
               >
-                Cancel
+                Add
               </button>
             </div>
           </div>
         </div>
-      )} */}
-            </div>
+
+        {/* ===== RIGHT PANEL ===== */}
+        <div className="bg-gray-50 rounded-xl p-4 space-y-4 h-fit">
+
+          <h3 className="font-semibold text-sm text-gray-700">Planning</h3>
+
+          {/* Priority */}
+          <div>
+            <label className="text-xs font-medium text-gray-600">
+              Priority
+            </label>
+            <select
+              className="w-full border rounded px-2 py-1 mt-1 capitalize text-sm"
+              value={issueForm.priority}
+              onChange={(e) =>
+                handleUpdate("priority", e.target.value)
+              }
+            >
+              {["highest", "high", "medium", "low", "lowest"].map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
           </div>
-        )}
+
+          {/* Dates */}
+          <div>
+            <label className="text-xs font-medium text-gray-600">
+              Start Date
+            </label>
+            <input
+              type="date"
+              className="w-full border rounded px-2 py-1 mt-1 text-sm"
+              value={issueForm.start_date || ""}
+              onChange={(e) =>
+                handleUpdate("start_date", e.target.value)
+              }
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-gray-600">
+              Target Date
+            </label>
+            <input
+              type="date"
+              className="w-full border rounded px-2 py-1 mt-1 text-sm"
+              value={issueForm.target_date || ""}
+              onChange={(e) =>
+                handleUpdate("target_date", e.target.value)
+              }
+            />
+          </div>
+
+          {/* Story Points */}
+          {modalIssue.type === "story" && (
+            <div>
+              <label className="text-xs font-medium text-gray-600">
+                Story Points
+              </label>
+              <select
+                className="w-full border rounded px-2 py-1 mt-1 text-sm"
+                value={issueForm.story_points || ""}
+                onChange={(e) =>
+                  handleUpdate("story_points", e.target.value)
+                }
+              >
+                <option value="">—</option>
+                {[0,1,2,3,5,8,13,21,34,55,89].map((sp) => (
+                  <option key={sp} value={sp}>
+                    {sp}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Related */}
+          <div className="pt-3 border-t">
+            <h3 className="font-semibold text-sm mb-1">
+              Related Work
+            </h3>
+            <button
+              onClick={() => setShowParentModal(true)}
+              className="text-blue-600 text-xs hover:underline"
+            >
+              + Add parent work item
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
 
         {/* ================= ASSIGN SPRINT ================= */}
       </div>

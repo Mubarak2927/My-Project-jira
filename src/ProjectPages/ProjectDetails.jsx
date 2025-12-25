@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { NavLink, Outlet, useParams } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useParams } from "react-router-dom";
 import { getAllProjects } from "../API/projectAPI";
-import { ChevronDown, ChevronUp, Fullscreen, List, ListFilter, Option } from "lucide-react";
+import { ChevronDown, ChevronUp, CircleArrowLeft, Fullscreen, List, ListFilter, Option } from "lucide-react";
 
 const ProjectLayout = () => {
   const { projectId } = useParams();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate =useNavigate()
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -29,7 +30,6 @@ const ProjectLayout = () => {
     fetchProject();
   }, [projectId]);
 
-  /* 🔥 Loading */
   if (loading) {
     return (
       <div className="p-6 text-gray-500 animate-pulse">
@@ -38,7 +38,6 @@ const ProjectLayout = () => {
     );
   }
 
-  /* ❌ Not found */
   if (!project) {
     return (
       <div className="p-6 text-red-500">
@@ -49,7 +48,11 @@ const ProjectLayout = () => {
 
   return (
     <div className="p-6">
-      {/* 🔥 PROJECT NAME */}
+      <p className="flex gap-2 items-center  mb-5">
+<CircleArrowLeft
+onClick={() => navigate('/projects')}
+ size={25} className="text-blue-600 hover:scale-110 cursor-pointer"/><span>Click to Back</span>
+      </p>
       <h1 className="text-2xl capitalize font-semibold mb-6">
         {project.name}
       </h1>
