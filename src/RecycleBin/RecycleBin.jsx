@@ -5,7 +5,7 @@ import {
   getRecycleBinItems,
   permanentDeleteRecycleItem,
   restoreRecycleItem,
-} from "./API/projectAPI";
+} from "../API/projectAPI";
 import { useNavigate } from "react-router";
 
 const RecycleBin = () => {
@@ -76,7 +76,7 @@ onClick={() => navigate('/projects')}
         {items.length > 0 && (
           <div className="overflow-x-auto rounded-2xl">
             <table className="w-full  text-sm">
-              <thead className="bg-gray-100 text-gray-600">
+              <thead className="bg-gray-300 text-gray-600">
                 <tr>
                   <th className="px-6 py-3 text-center">SI No</th>
                   <th className="px-6 py-3 text-center">Project Name</th>
@@ -88,7 +88,7 @@ onClick={() => navigate('/projects')}
                 {items.map((item, index) => (
                   <tr
                     key={item.id}
-                    className="  transition"
+                    className=" hover:bg-gray-100  transition"
                   >
                     <td className="px-6 text-center py-3">{index + 1}</td>
                     <td className="px-6 py-3 text-center font-medium text-gray-800">
@@ -100,7 +100,7 @@ onClick={() => navigate('/projects')}
                         <button
                           title="Restore"
                           onClick={() => handleRestore(item)}
-                          className="p-2 rounded-full bg-green-100 text-green-600 hover:bg-green-200 transition"
+                          className="p-2 rounded-full cursor-pointer bg-green-100 text-green-600 hover:bg-green-200 transition"
                         >
                           <RotateCcw size={16} />
                         </button>
@@ -108,7 +108,7 @@ onClick={() => navigate('/projects')}
                         <button
                           title="Permanent Delete"
                           onClick={() => handlePermanentDelete(item)}
-                          className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition"
+                          className="p-2 rounded-full cursor-pointer bg-red-100 text-red-600 hover:bg-red-200 transition"
                         >
                           <Trash2 size={16} />
                         </button>

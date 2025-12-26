@@ -22,7 +22,8 @@ import EmployeeMangement from "./Pages/EmployeeMangement";
 import EpicCreate from "./Modal/EpicCreate";
 import MyProfile from "./Pages/MyProfile";
 import Docs from "./Pages/Docs";
-import RecycleBin from "./RecycleBin";
+import BacklogBin from "./RecycleBin/BacklogBin";
+import RecycleBin from "./RecycleBin/RecycleBin";
 
 const App = () => {
   return (
@@ -37,27 +38,31 @@ const App = () => {
   <Route path="/employees" element={<EmployeeMangement />} />
   <Route path="/employees/me" element={<MyProfile />} />
 <Route path="/recycle-bin" element={<RecycleBin />} />
+ <Route path="/backlog-bin" element={<BacklogBin />} />
 
   {/* ✅ GLOBAL DOCS */}
   <Route path="/docs" element={<Docs />} />
 
   <Route path="/projects/:projectId" element={<ProjectLayout />}>
-    <Route index element={<Navigate to="summary" replace />} />
+  <Route index element={<Navigate to="summary" replace />} />
 
-    <Route path="summary" element={<ProfileSummary />} />
-    <Route path="backlog" element={<ProductBacklog />} />
-    <Route path="board" element={<BoardView />} />
-    <Route path="lists" element={<Lists />} />
-    <Route path="goals" element={<Goals />} />
-    <Route path="sprints" element={<Sprint />} />
+  <Route path="summary" element={<ProfileSummary />} />
+  <Route path="backlog" element={<ProductBacklog />} />
 
-    {/* ✅ PROJECT DOCS */}
-    <Route path="docs" element={<Docs />} />
+  {/* 🔥 BACKLOG BIN MUST BE HERE */}
+  <Route path="backlog-bin" element={<BacklogBin />} />
 
-    <Route path="completesprint" element={<CompleteSprint />} />
-    <Route path="work-items/new/:type" element={<WorkItemCreate />} />
-    <Route path="work-items/new/:type" element={<EpicCreate />} />
-  </Route>
+  <Route path="board" element={<BoardView />} />
+  <Route path="lists" element={<Lists />} />
+  <Route path="goals" element={<Goals />} />
+  <Route path="sprints" element={<Sprint />} />
+  <Route path="docs" element={<Docs />} />
+
+  <Route path="completesprint" element={<CompleteSprint />} />
+  <Route path="work-items/new/:type" element={<WorkItemCreate />} />
+  <Route path="work-items/new/:type" element={<EpicCreate />} />
+</Route>
+
 </Route>
 
       </Routes>

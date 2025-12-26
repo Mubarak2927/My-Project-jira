@@ -25,7 +25,7 @@ const ListsView = () => {
   };
 
   return (
-    <div className="p-6 bg-white rounded-2xl shadow-lg w-full">
+    <div className="p-6  mt-5  w-full">
       <h2 className="text-2xl font-bold mb-4">Task List</h2>
 
       {loading ? (
@@ -41,7 +41,7 @@ const ListsView = () => {
       ) : (
         <div className="overflow-x-auto max-h-[70vh]">
           <table className="w-full text-sm rounded-lg overflow-hidden">
-            <thead className="bg-gray-200 ">
+            <thead className="bg-gray-300 ">
               <tr>
                 <th className="px-3 py-2 border-b text-center">SI No</th>
                 <th className="px-3 py-2 border-b text-left">Name</th>

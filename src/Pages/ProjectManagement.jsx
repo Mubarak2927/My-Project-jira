@@ -95,7 +95,7 @@ const ProjectManagement = () => {
   onClick={() => navigate("/recycle-bin")}
   className="flex items-center cursor-pointer text-red-600 gap-2 shadow-md hover:scale-105 transition px-4 py-2 rounded-lg "
 >
-  <Trash2 size={16} /> Trash
+  <Trash2 size={16} /> Recycle Bin
 </button>
 
           {loginRole === "admin" && (
