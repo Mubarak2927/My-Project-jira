@@ -440,3 +440,60 @@ export const permanentDeleteRecycleItem = async (
   );
   return res.data;
 };
+
+
+// 1. Get all backlog issues across all projects
+export const getGlobalBacklog = async () => {
+  const res = await API.get("/global/backlog");
+  return res.data;
+};
+
+// 2. Get all active & planned global sprints
+export const getGlobalSprints = async () => {
+  const res = await API.get("/global/sprints");
+  return res.data;
+};
+
+// 3. Get completed global sprints
+export const getCompletedGlobalSprints = async () => {
+  const res = await API.get("/global/sprints/completed");
+  return res.data;
+};
+
+// 4. Create a new global sprint
+export const createGlobalSprint = async (sprintData) => {
+  const res = await API.post("/global/sprints", sprintData);
+  return res.data;
+};
+
+// 5. Assign multiple issues to a global sprint
+export const assignIssuesToGlobalSprint = async (sprint_id, issue_ids) => {
+  const res = await API.post(`/global/sprints/${sprint_id}/assign`, {
+    issue_ids,
+  });
+  return res.data;
+};
+
+// 6. Start a global sprint
+export const startGlobalSprint = async (sprint_id) => {
+  const res = await API.post(`/global/sprints/${sprint_id}/start`);
+  return res.data;
+};
+
+// 7. Complete a global sprint
+export const completeGlobalSprint = async (sprint_id) => {
+  const res = await API.post(`/global/sprints/${sprint_id}/complete`);
+  return res.data;
+};
+
+// 8. Get board for a global sprint
+export const getGlobalSprintBoard = async (sprint_id) => {
+  const res = await API.get(`/global/board/${sprint_id}`);
+  return res.data;
+};
+
+// 9. Update issue status
+export const updateGlobalIssueStatus = async (issue_id, status) => {
+  const res = await API.put(`/global/issues/${issue_id}`, { status });
+  return res.data;
+};
