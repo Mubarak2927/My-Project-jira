@@ -24,6 +24,7 @@ import MyProfile from "./Pages/MyProfile";
 import Docs from "./Pages/Docs";
 import BacklogBin from "./RecycleBin/BacklogBin";
 import RecycleBin from "./RecycleBin/RecycleBin";
+import SprintManagemnt from "./Pages/SprintManagement";
 
 const App = () => {
   return (
@@ -35,6 +36,7 @@ const App = () => {
   <Route path="/home" element={<Home />} />
 
   <Route path="/projects" element={<ProjectManagement />} />
+  <Route path="/sprints" element={<SprintManagemnt  />} />
   <Route path="/employees" element={<EmployeeMangement />} />
   <Route path="/employees/me" element={<MyProfile />} />
 <Route path="/recycle-bin" element={<RecycleBin />} />
@@ -57,6 +59,8 @@ const App = () => {
   <Route path="goals" element={<Goals />} />
   <Route path="sprints" element={<Sprint />} />
   <Route path="docs" element={<Docs />} />
+
+  
 
   <Route path="completesprint" element={<CompleteSprint />} />
   <Route path="work-items/new/:type" element={<WorkItemCreate />} />

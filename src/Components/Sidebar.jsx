@@ -23,6 +23,9 @@ const Sidebar = () => {
 
   const isHomeActive = location.pathname === "/home";
   const isDocsActive = location.pathname.startsWith("/docs");
+  const isSprintsActive = location.pathname.startsWith("/sprints");
+
+
 
 
   const isProjectManagementActive =
@@ -75,12 +78,16 @@ const Sidebar = () => {
           active={isProjectManagementActive}
           onClick={() => navigate("/projects")}
         />
+<SidebarItem
+  icon={<CalendarPlus size={20} />}
+  label="Sprints"
+  collapsed={collapsed}
+  active={isSprintsActive}
+  onClick={() => navigate("/sprints")}
+/>
 
-        <SidebarItem
-          icon={<CalendarPlus size={20} />}
-          label="Sprints"
-          collapsed={collapsed}
-        />
+
+
         <SidebarItem
   icon={<Folder size={20} />}
   label="Docs"
