@@ -469,10 +469,11 @@ export const createGlobalSprint = async (sprintData) => {
 // 5. Assign multiple issues to a global sprint
 export const assignIssuesToGlobalSprint = async (sprint_id, issue_ids) => {
   const res = await API.post(`/global/sprints/${sprint_id}/assign`, {
-    issue_ids,
+    issue_ids, // must be array
   });
   return res.data;
 };
+
 
 // 6. Start a global sprint
 export const startGlobalSprint = async (sprint_id) => {

@@ -1,8 +1,10 @@
+import { Toaster } from "react-hot-toast";
 import { NavLink, Outlet } from "react-router-dom";
 
 const SprintManagement = () => {
   return (
     <div className="p-6">
+      <Toaster position="top-right"/>
       <h1 className="text-2xl font-semibold mb-6">
         Sprint Management
       </h1>
