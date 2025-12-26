@@ -95,7 +95,7 @@ const ProjectManagement = () => {
   onClick={() => navigate("/recycle-bin")}
   className="flex items-center cursor-pointer text-red-600 gap-2 shadow-md hover:scale-105 transition px-4 py-2 rounded-lg "
 >
-  <Trash2 size={16} /> Recycle Bin
+  <Trash2 size={16} />Trash
 </button>
 
           {loginRole === "admin" && (
@@ -158,16 +158,25 @@ const ProjectManagement = () => {
                   </td>
 
                   <td className="py-3 flex gap-2.5 text-center justify-center">
+                    <button 
+                    title="Edit"
+                    >
                     <Pencil
                       size={16}
+                      title='Edit'
                       className="cursor-pointer hover:scale-110 text-blue-600"
                       onClick={() => handleEditClick(project)}
                     />
+                    </button>
+                    <button
+                    title="Delete" 
+                    >
                     <Trash2
                       size={16}
                       className="text-red-600 ml-6 cursor-pointer hover:scale-110"
                       onClick={(e) => handleDelete(e, project.id)}
                     />
+                    </button>
                   </td>
                 </tr>
               ))}

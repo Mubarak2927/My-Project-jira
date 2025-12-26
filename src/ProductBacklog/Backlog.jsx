@@ -331,10 +331,10 @@ const Backlog = ({
 
         <button
           onClick={() => navigate(`/projects/${project.id}/backlog-bin`)}
-          className="flex items-center gap-2 px-3 py-2 bg-white"
+          className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:scale-104 transition rounded bg-white"
         >
           <Trash2 size={16} className="text-red-600" />
-          <span className="text-red-600">Recycle Bin</span>
+          <span className="text-red-600">Trash</span>
         </button>
 
         <button
