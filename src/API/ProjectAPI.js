@@ -498,3 +498,14 @@ export const updateGlobalIssueStatus = async (issue_id, status) => {
   const res = await API.put(`/global/issues/${issue_id}`, { status });
   return res.data;
 };
+
+
+export const getSprintIssues = async (sprintId) => {
+  try {
+    const response = await API.get(`/global/sprints/${sprintId}/stats`);
+    return response.data.issues || []; // ⚠️ return an array
+  } catch (error) {
+    throw error.response?.data?.message || "Failed to fetch sprint issues";
+  }
+};
+
