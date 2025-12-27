@@ -47,7 +47,15 @@ const CommonBoard = () => {
     setBoard({ ...board, columns: newColumns });
 
     // update backend
-    await updateGlobalIssueStatus(draggableId, newColumns[destColIndex].column_info.id);
+    await updateGlobalIssueStatus(
+  draggableId,
+  newColumns[destColIndex].column_info.status // ✅ CORRECT
+);
+console.log("BOARD DATA 👉", board);
+
+const refreshedBoard = await getGlobalSprintBoard(board.sprint_id);
+setBoard(refreshedBoard.board);
+
   } catch (err) {
     console.error("Failed to update issue status", err);
   }
