@@ -1,118 +1,184 @@
-import React, { useState } from "react";
-import { Upload, Folder, FileText } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Upload, FileText, Download, Trash2 } from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
+import {
+  uploadProjectDocument,
+  getProjectDocuments,
+  deleteProjectDocument,
+  downloadProjectDocument,
+  getAllProjects,
+} from "../API/projectAPI";
 
 const Docs = () => {
-  const [docs, setDocs] = useState({});
-  const [folderName, setFolderName] = useState("");
-  const [selectedFolder, setSelectedFolder] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file || file.type !== "application/pdf" || !folderName.trim()) return;
+  // Fetch all projects
+  const fetchProjects = async () => {
+    try {
+      const data = await getAllProjects();
+      setProjects(Array.isArray(data) ? data : []);
+      if (data.length > 0) setSelectedProject(data[0].id);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load projects");
+    }
+  };
 
-    setDocs((prev) => ({
-      ...prev,
-      [folderName]: [...(prev[folderName] || []), file],
-    }));
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
-    setSelectedFolder(folderName);
-    setFolderName("");
+  // Fetch documents
+  const fetchDocuments = async (projectId) => {
+    if (!projectId) return;
+    try {
+      const data = await getProjectDocuments(projectId);
+      setDocuments(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load documents");
+    }
+  };
+
+  useEffect(() => {
+    if (selectedProject) fetchDocuments(selectedProject);
+  }, [selectedProject]);
+
+  // Upload document
+  const handleUpload = async () => {
+    if (!file) return toast.error("No file selected");
+    if (!selectedProject) return toast.error("Select a project");
+
+    const formData = new FormData();
+    formData.append("file", file);          // must match API key
+    formData.append("name", file.name);     // optional
+
+    try {
+      setLoading(true);
+      await uploadProjectDocument(selectedProject, formData);
+      toast.success("File uploaded successfully!");
+      setFile(null);
+      fetchDocuments(selectedProject);
+    } catch (err) {
+      console.error(err.response?.data || err);
+      toast.error("Upload failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Download document
+  const handleDownload = async (doc) => {
+    if (!doc.id || !selectedProject) return;
+    try {
+      const res = await downloadProjectDocument(selectedProject, doc.id);
+      const blob = new Blob([res]);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = doc.name;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      toast.error("Download failed");
+    }
+  };
+
+  // Delete document
+  const handleDelete = async (docId) => {
+    if (!docId || !selectedProject) return;
+    if (!window.confirm("Are you sure to delete this document?")) return;
+
+    try {
+      await deleteProjectDocument(selectedProject, docId);
+      toast.success("Document deleted");
+      fetchDocuments(selectedProject);
+    } catch (err) {
+      console.error(err);
+      toast.error("Delete failed");
+    }
   };
 
   return (
-    <div className="h-[93vh] rounded-2xl bg-gray-100 p-6">
-      {/* Header */}
-      <div className="mb-6 ">
-        <h1 className="text-3xl font-bold text-gray-800">📂 Documents</h1>
-       
+    <div className="h-[93vh] bg-gray-100 p-6 rounded-2xl">
+      <Toaster />
+      <h1 className="text-3xl font-bold mb-6">📂 Project Documents</h1>
+
+      {/* Project Dropdown */}
+      <div className="mb-4">
+        <label className="font-medium mr-3">Select Project:</label>
+        <select
+          className="p-2 rounded-lg border"
+          value={selectedProject || ""}
+          onChange={(e) => setSelectedProject(e.target.value)}
+        >
+          {projects.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Upload Card */}
-      <div className="bg-white p-5 rounded-xl shadow-lg flex items-center gap-4 mb-6">
+      {/* Upload Section */}
+      <div className="bg-white p-5 rounded-xl shadow mb-6 flex items-center gap-3">
         <input
-          type="text"
-          placeholder="Enter folder name"
-          value={folderName}
-          onChange={(e) => setFolderName(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 w-64 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          type="file"
+          id="fileUpload"
+          onChange={(e) => setFile(e.target.files[0])}
+          className="hidden"
         />
-        <label className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 transition text-white px-5 py-2 rounded-lg cursor-pointer text-sm font-medium">
+        <label
+          htmlFor="fileUpload"
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg cursor-pointer"
+        >
           <Upload size={18} />
-          Upload PDF
-          <input
-            type="file"
-            accept="application/pdf"
-            hidden
-            onChange={handleUpload}
-          />
+          {file ? file.name : "Choose File"}
         </label>
+        <button
+          onClick={handleUpload}
+          disabled={!file || loading || !selectedProject}
+          className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg"
+        >
+          {loading ? "Uploading..." : "Upload"}
+        </button>
       </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-12 gap-6">
-        {/* Folders Section */}
-        <div className="col-span-4">
-          <h2 className="text-gray-700 font-semibold mb-3">Folders</h2>
-
-          {Object.keys(docs).length === 0 && (
-            <div className="bg-white rounded-xl p-4 shadow text-gray-400 text-sm">
-              No folders yet. Upload a PDF to create a folder.
+      {/* Documents List */}
+      <div className="grid grid-cols-3 gap-4">
+        {documents.map((doc) => (
+          <div
+            key={doc.id}
+            className="bg-white rounded-xl p-4 shadow flex flex-col gap-2"
+          >
+            <div className="flex items-center gap-2">
+              <FileText className="text-red-500" />
+              <span className="font-medium truncate">{doc.name}</span>
             </div>
-          )}
-
-          <div className="grid grid-cols-1 gap-4">
-            {Object.keys(docs).map((folder) => (
-              <div
-                key={folder}
-                onClick={() => setSelectedFolder(folder)}
-                className={`bg-white rounded-xl p-4 flex items-center justify-between cursor-pointer transition transform hover:-translate-y-1 shadow-sm
-                ${
-                  selectedFolder === folder
-                    ? "border-2 border-blue-500 shadow-md"
-                    : "border border-transparent"
-                }`}
+            <p className="text-xs text-gray-500">
+              Uploaded by {doc.uploaded_by_name}
+            </p>
+            <div className="flex gap-3 mt-3">
+              <button
+                onClick={() => handleDownload(doc)}
+                className="text-blue-600"
               >
-                <div className="flex items-center gap-3">
-                  <Folder className="text-blue-600" />
-                  <span className="font-medium text-gray-800">{folder}</span>
-                </div>
-                <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
-                  {docs[folder].length}
-                </span>
-              </div>
-            ))}
+                <Download size={18} />
+              </button>
+              <button
+                onClick={() => handleDelete(doc.id)}
+                className="text-red-600"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
           </div>
-        </div>
-
-        {/* Files Section */}
-        <div className="col-span-8">
-          {!selectedFolder ? (
-            <div className="bg-white p-6 rounded-xl shadow text-gray-500 text-sm flex items-center justify-center h-60">
-              Select a folder to view PDFs
-            </div>
-          ) : (
-            <div className="bg-white p-6 rounded-xl shadow">
-              <h2 className="text-gray-700 font-semibold mb-4">
-                Files in{" "}
-                <span className="text-blue-600">{selectedFolder}</span>
-              </h2>
-
-              <div className="grid grid-cols-3 gap-5">
-                {docs[selectedFolder].map((file, index) => (
-                  <div
-                    key={index}
-                    className="bg-gray-50 rounded-lg p-4 flex items-center gap-3 hover:shadow-md transition transform hover:-translate-y-1"
-                  >
-                    <FileText className="text-red-500" size={22} />
-                    <span className="text-gray-700 text-sm truncate">
-                      {file.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        ))}
       </div>
     </div>
   );

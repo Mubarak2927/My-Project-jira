@@ -61,25 +61,35 @@ const CommonBoard = () => {
   };
 
   const handleCompleteSprint = async () => {
-    if (!board) return;
+  if (!board) return;
 
-    // Check if all issues in the "Done" column are completed
-    const doneColumn = board.columns.find(col => col.column_info.status.toLowerCase() === "done");
-    if (!doneColumn || doneColumn.issues.length === 0) {
-      toast.error("Cannot complete sprint: No tasks in Done column!");
-      return;
-    }
+  try {
+    await completeGlobalSprint(board.sprint_id);
+    toast.success("Sprint completed successfully!");
+    setBoard(null);
+  } catch (err) {
+    console.error(err);
 
-    try {
-      await completeGlobalSprint(board.sprint_id);
-      toast.success("Sprint completed successfully!");
+    const data = err?.response?.data;
 
-      setBoard(null); // reset board
-    } catch (err) {
-      console.error(err);
+    // 🔥 Pending issues irundha
+    if (data?.pending_issues && data.pending_issues.length > 0) {
+      toast.error("Pending issues moved to Backlog!");
+
+      // Move all pending issues to Backlog
+      for (const issue of data.pending_issues) {
+        await updateGlobalIssueStatus(issue.id, "Backlog");
+      }
+
+      // Refresh board after moving issues
+      const refreshedBoard = await getGlobalSprintBoard(board.sprint_id);
+      setBoard(refreshedBoard.board);
+    } else {
       toast.error("Failed to complete sprint");
     }
-  };
+  }
+};
+
 
   if (loading) return <div className="">Loading Board...</div>;
   if (!board) return <div className="">No Board Found</div>;

@@ -541,3 +541,35 @@ export const getLinksByIssueId = async (issueId) => {
 };
 
 
+// Upload document
+export const uploadProjectDocument = async (project_id, formData) => {
+  const res = await API.post(
+    `/projects/${project_id}/documents/upload`, // must include /upload
+    formData
+  );
+  return res.data;
+};
+
+
+
+// List documents
+export const getProjectDocuments = async (project_id) => {
+  const res = await API.get(`/projects/${project_id}/documents`);
+  return res.data;
+};
+
+// Delete document
+export const deleteProjectDocument = async (project_id, document_id) => {
+  const res = await API.delete(
+    `/projects/${project_id}/documents/${document_id}`
+  );
+  return res.data;
+};
+
+// Download document
+export const downloadProjectDocument = async (project_id, document_id) => {
+  return API.get(
+    `/projects/${project_id}/documents/${document_id}/download`,
+    { responseType: "blob" }
+  );
+};

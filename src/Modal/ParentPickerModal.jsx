@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
-import { createIssueLink, getAllIssues } from '../API/projectAPI'
+import { createIssueLink, getAllIssues } from "../API/projectAPI";
 
 const ParentPickerModal = ({ issue, onClose, onLinked }) => {
   const [issues, setIssues] = useState([]);
@@ -18,7 +18,11 @@ const ParentPickerModal = ({ issue, onClose, onLinked }) => {
 
         // Allow all types except self
         const parentCandidates = list.filter(
-          (i) => i.id !== issue.id && ["epic", "bug", "story", "task", "subtask"].includes(i.type.toLowerCase())
+          (i) =>
+            i.id !== issue.id &&
+            ["epic", "bug", "story", "task", "subtask", "feature"].includes(
+              (i.type || "").toLowerCase()
+            )
         );
 
         setIssues(parentCandidates);
@@ -31,16 +35,22 @@ const ParentPickerModal = ({ issue, onClose, onLinked }) => {
     load();
   }, [issue.id, issue.project_id]);
 
-  const normalizeType = (type) => {
-    switch (type.toLowerCase()) {
-      case "epic":
-      case "issue":
-        return type.toLowerCase();
-      case "story":
-        return "issue";
-      default:
-        return "issue";
+  /* ================== ✅ ADD THIS HELPER (DON'T REMOVE OLD LOGIC) ================== */
+  const toLinkType = (type) => {
+    if (!type) return "task";
+    const t = type.toLowerCase();
+
+    // backend allowed enums only
+    if (
+      ["project", "epic", "sprint", "story", "task", "bug", "subtask", "feature"].includes(
+        t
+      )
+    ) {
+      return t;
     }
+
+    // fallback if backend sends "issue"
+    return "task";
   };
 
   const toggleSelect = (parent) => {
@@ -52,40 +62,41 @@ const ParentPickerModal = ({ issue, onClose, onLinked }) => {
   };
 
   const handleLinkAll = async () => {
-  if (linking || selectedParents.length === 0) return;
+    if (linking || selectedParents.length === 0) return;
 
-  try {
-    setLinking(true);
-    let successCount = 0;
-    for (let pid of selectedParents) {
-      const parent = issues.find((i) => i.id === pid);
-      try {
-        await createIssueLink({
-          source_id: parent.id,
-          source_type: normalizeType(parent.type),
-          target_id: issue.id,
-          target_type: "issue",
-          reason: "relates_to",
-        });
-        successCount++;
-      } catch (err) {
-        console.error(`Failed to link ${parent.name}`, err);
+    try {
+      setLinking(true);
+      let successCount = 0;
+
+      for (let pid of selectedParents) {
+        const parent = issues.find((i) => i.id === pid);
+        if (!parent) continue;
+
+        try {
+          await createIssueLink({
+            source_id: parent.id,
+            source_type: toLinkType(parent.type), // ✅ FIXED
+            target_id: issue.id,
+            target_type: toLinkType(issue.type),  // ✅ FIXED
+            reason: "relates_to",
+          });
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to link ${parent.name}`, err);
+        }
       }
+
+      if (successCount > 0) {
+        toast.success(`${successCount} parent(s) linked`);
+        onLinked(); // refresh in BacklogModal
+      } else {
+        toast.error("No links succeeded");
+      }
+    } finally {
+      setLinking(false);
+      onClose();
     }
-
-    if (successCount > 0) {
-      toast.success(`${successCount} parent(s) linked`);
-      onLinked(); // refresh parent links in BacklogModal
-    } else {
-      toast.error("No links succeeded");
-    }
-
-  } finally {
-    setLinking(false);
-    onClose(); // close the modal regardless of errors
-  }
-};
-
+  };
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -109,7 +120,9 @@ const ParentPickerModal = ({ issue, onClose, onLinked }) => {
               <label
                 key={i.id}
                 className={`border rounded px-3 py-2 flex justify-between items-center cursor-pointer ${
-                  linking ? "opacity-50 pointer-events-none" : "hover:bg-gray-50"
+                  linking
+                    ? "opacity-50 pointer-events-none"
+                    : "hover:bg-gray-50"
                 } ${selectedParents.includes(i.id) ? "bg-blue-100" : ""}`}
               >
                 <div className="flex items-center gap-2">
@@ -121,7 +134,9 @@ const ParentPickerModal = ({ issue, onClose, onLinked }) => {
                   />
                   <div>
                     <p className="font-medium">{i.name}</p>
-                    <p className="text-xs text-gray-500">{i.type.toUpperCase()}</p>
+                    <p className="text-xs text-gray-500">
+                      {(i.type || "").toUpperCase()}
+                    </p>
                   </div>
                 </div>
               </label>

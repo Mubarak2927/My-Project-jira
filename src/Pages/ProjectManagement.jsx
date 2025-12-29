@@ -41,6 +41,21 @@ const ProjectManagement = () => {
     fetchProjects(true);
   }, []);
 
+const handleProjectClick = async (projectId) => {
+  try {
+    const projectData = await getProjectById(projectId);
+    console.log("Selected Project:", projectData);
+
+    // example:
+    setSelectedProject(projectData);
+    setEditModalOpen(true); // or open view modal
+
+  } catch (err) {
+    toast.error("Failed to load project details");
+  }
+};
+
+
   // ================= CREATE PROJECT =================
   const handleCreateProject = async (formData, setModalLoading) => {
     try {
