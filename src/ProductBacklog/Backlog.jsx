@@ -1,40 +1,17 @@
 import React, { useEffect, useState } from "react";
-import {
-  CheckSquare,
-  BookOpen,
-  Bug,
-  Plus,
-  Dot,
-  Trash2,
-  SquarePen,
-  Eye,
-  X,
-  Crown,
-  Layers, // Feature
-  User,
-  List,
-  ListFilter,
-  Fullscreen,
-  FileUp,
-  Search,
-  BookmarkCheck,
-  Maximize2,
-  Minimize2,
-  Undo,
-  SaveAll,
-  RotateCcw,
-} from "lucide-react";
+import {CheckSquare,BookOpen,Bug,Plus,Dot,Trash2,SquarePen,Eye,X,Crown,Layers,User,List,ListFilter,Fullscreen,FileUp,Search,BookmarkCheck,Maximize2,Minimize2,Undo,SaveAll,RotateCcw,} from "lucide-react";
+import { useNavigate, useOutletContext } from "react-router";
+import toast, { Toaster } from "react-hot-toast";
 import {
   deleteIssues,
   getAllUsers,
-  getIssueComments,
   getSprint,
+  getIssueComments,
   IssueComments,
   sprintTaskMove,
   updateIssue,
-} from "../API/projectAPI";
-import { useNavigate, useOutletContext } from "react-router";
-import toast, { Toaster } from "react-hot-toast";
+} from "../API/ProjectAPI";
+import BacklogModal from "../Modal/BacklogModal";
 
 const Backlog = ({
   epics = [],
@@ -67,7 +44,6 @@ const Backlog = ({
   const [searchType, setSearchType] = useState("");
   const [searchAssignee, setSearchAssignee] = useState("");
   const [searchEpic, setSearchEpic] = useState("");
-  const [originalIssue, setOriginalIssue] = useState(null);
 
   /* ===================== FILTERED ISSUES ===================== */
   const filteredIssues = issues.filter((issue) => {
@@ -93,23 +69,6 @@ const Backlog = ({
 
     return true;
   });
-  useEffect(() => {
-    if (modalIssue) {
-      const snapshot = {
-        name: modalIssue.name || "",
-        priority: modalIssue.priority || "",
-        start_date: modalIssue.start_date || "",
-        target_date: modalIssue.target_date || "",
-        story_points: modalIssue.story_points || "",
-        status: modalIssue.status || "",
-        assignee_id: modalIssue.assignee_id || "",
-      };
-
-      setIssueForm(snapshot);
-      setOriginalIssue(snapshot); // 🔥 BACKUP
-      setEditedTitle(modalIssue.name);
-    }
-  }, [modalIssue]);
 
   const navigate = useNavigate();
 
@@ -128,55 +87,8 @@ const Backlog = ({
   const [openWorkItem, setOpenWorkItem] = useState(false);
   const [users, setUsers] = useState([]);
 
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(modalIssue?.name);
   const [showParentModal, setShowParentModal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [issueForm, setIssueForm] = useState({});
-
-  useEffect(() => {
-    if (modalIssue) {
-      setIssueForm({
-        name: modalIssue.name || "",
-        priority: modalIssue.priority || "",
-        start_date: modalIssue.start_date || "",
-        target_date: modalIssue.target_date || "",
-        story_points: modalIssue.story_points || "",
-        status: modalIssue.status || "",
-        assignee_id: modalIssue.assignee_id || "",
-      });
-      setEditedTitle(modalIssue.name);
-    }
-  }, [modalIssue]);
-
- const handleUpdate = (field, value) => {
-  setIssueForm((prev) => ({ ...prev, [field]: value }));
-  setModalIssue((prev) => ({ ...prev, [field]: value }));
-};
-
-
-
-
-
-  const handleTitleSave = async () => {
-    if (editedTitle === modalIssue.name) {
-      setIsEditingTitle(false);
-      return;
-    }
-
-    try {
-      await updateIssue(modalIssue.id, { name: editedTitle });
-
-      setModalIssue((prev) => ({ ...prev, name: editedTitle }));
-      setIssueForm((prev) => ({ ...prev, name: editedTitle }));
-
-      toast.success("Title updated");
-    } catch (err) {
-      toast.error("Failed to update title");
-    }
-
-    setIsEditingTitle(false);
-  };
 
   const handleAddParent = (item) => {
     console.log("Parent added:", item);
@@ -257,9 +169,6 @@ const Backlog = ({
 
       toast.success("Issues moved to Trash");
       setSelectedIssues([]);
-
-      // 🔥 refresh backlog
-      // fetchIssues();
     } catch (err) {
       console.error(err);
       toast.error("Failed to move issues to Trash");
@@ -280,40 +189,6 @@ const Backlog = ({
       toast.error("Fullscreen not supported");
     }
   };
-
-
-  const handleSaveIssue = async () => {
-  const ok = window.confirm("Do you want to save changes?");
-  if (!ok) return;
-
-  try {
-    await updateIssue(modalIssue.id, issueForm);
-
-    setModalIssue((prev) => ({ ...prev, ...issueForm }));
-    setOriginalIssue(issueForm); // 🔥 baseline update
-
-    toast.success("Issue updated successfully");
-  } catch (err) {
-    toast.error("Failed to save issue");
-  }
-};
-
-
-  const handleRestoreIssue = () => {
-  if (!originalIssue) return;
-
-  const ok = window.confirm(
-    "Undo changes?\nAll unsaved changes will be lost."
-  );
-
-  if (!ok) return;
-
-  setIssueForm(originalIssue);
-  setModalIssue((prev) => ({ ...prev, ...originalIssue }));
-
-  toast("Changes restored", { icon: "↩️" });
-};
-
 
   return (
     <>
@@ -402,17 +277,6 @@ const Backlog = ({
                 ))}
               </select>
 
-              {/* <select
-                value={searchEpic}
-                onChange={(e) => setSearchEpic(e.target.value)}
-              >
-                <option value="">All Epics</option>
-                {epics.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.name}
-                  </option>
-                ))}
-              </select> */}
             </div>
           </div>
         </div>
@@ -490,11 +354,12 @@ const Backlog = ({
         <div className="overflow-y-auto h-[49vh] rounded">
           <table className="w-full text-sm text-left">
             <thead className="sticky top-0 bg-gray-200 z-10">
-              <tr className="text-gray-700">
+              <tr className="text-gray-700 text-center">
                 <th className="px-3 py-2">ID</th>
                 <th className="px-3 py-2">Select Task</th>
                 <th className="px-3 py-2">Type</th>
                 <th className="px-3 py-2">Title</th>
+                <th className="px-3 py-2">Priority</th>
                 <th className="px-3 py-2">Assigned to</th>
               </tr>
             </thead>
@@ -503,7 +368,7 @@ const Backlog = ({
               {filteredIssues.map((issue, index) => (
                 <tr
                   key={issue.id}
-                  className="border-b hover:bg-gray-50 transition"
+                  className="border-b hover:bg-gray-50 text-center transition"
                 >
                   {/* SI NO */}
                   <td className="px-3 py-2">{index + 1}</td>
@@ -524,7 +389,7 @@ const Backlog = ({
                   </td>
 
                   {/* TITLE */}
-                  <td className="px-3 py-2 font-medium">
+                  <td className="px-3 py-2 text-center font-medium">
                     <p
                       onClick={() => openIssueModal(issue)}
                       className=" hover:underline cursor-pointer w-fit"
@@ -536,6 +401,9 @@ const Backlog = ({
                         (Story_Points : {issue.story_points})
                       </span>
                     )}
+                  </td>
+                  <td>
+                    {issue.priority}
                   </td>
                   {/* ASSIGNED TO */}
                   <td className="px-3 py-2">
@@ -554,235 +422,9 @@ const Backlog = ({
             </tbody>
           </table>
         </div>
-       
+      </div>
+      {/* ================= ASSIGN SPRINT ================= */}
 
-       {modalIssue && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl shadow-2xl w-[90vw] h-[90vh] flex flex-col overflow-hidden">
-              {/* ===== HEADER ===== */}
-              <div className="sticky top-0 z-10 bg-white  px-6 py-4 flex justify-between items-start">
-                <div>
-                  <p className="text-lg font-semibold text-orange-600 tracking-wide">
-                    {modalIssue.type?.toUpperCase()}
-                  </p>
-
-                  <p>Task Name</p>
-                  {!isEditingTitle ? (
-                    <h2
-                      className="text-2xl w-fit font-semibold hover:bg-gray-100 px-1 cursor-pointer"
-                      onClick={() => setIsEditingTitle(true)}
-                    >
-                      {modalIssue.name}
-                    </h2>
-                  ) : (
-                    <input
-                      className="text-2xl font-semibold border rounded px-2 py-1 w-full"
-                      value={editedTitle}
-                      onChange={(e) => setEditedTitle(e.target.value)}
-                      onBlur={handleTitleSave}
-                      autoFocus
-                    />
-                  )}
-
-                  <div className="mt-2">
-                    <label className="text-xs font-medium text-gray-600">
-                      Assigned To
-                    </label>
-
-                    <select
-                      className="w-fit mt-1 border rounded px-2 py-1 text-sm"
-                      value={issueForm.assignee_id || ""}
-                      onChange={(e) =>
-                        handleUpdate("assignee_id", e.target.value)
-                      }
-                    >
-                      <option value="">Unassigned</option>
-
-                      {users.map((user) => (
-                        <option key={user._id} value={user._id}>
-                          {user.full_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="flex gap-2 items-center">
-                  <button
-                  title="Undo"
-                    onClick={handleRestoreIssue}
-                    className="p-1 text-sm   cursor-pointer rounded "
-                  >
-                 <RotateCcw />
-                  </button>
-
-                  <button
-                    onClick={handleSaveIssue}
-                    className="px-3 py-1 text-blue-600 text-sm "
-                  >
-                    <SaveAll />
-                  </button>
-
-                  <button
-                    onClick={() => setModalIssue(null)}
-                    className="text-gray-500 hover:text-black ml-2"
-                  >
-                    <X size={22} />
-                  </button>
-                </div>
-              </div>
-
-              {/* ===== BODY ===== */}
-              <div className="flex-1 overflow-y-auto p-6 grid grid-cols-3 gap-6">
-                {/* ===== LEFT CONTENT ===== */}
-                <div className="col-span-2 space-y-6">
-                  {/* Description */}
-                  <div>
-                    <h3 className="font-semibold mb-1">Description</h3>
-                    <p className="text-sm text-gray-700 bg-gray-50 p-4 rounded-lg">
-                      {modalIssue.description || "No description provided"}
-                    </p>
-                  </div>
-
-                  {/* Comments */}
-                  <div>
-                    <h3 className="font-semibold mb-2">
-                      Discussion ({issueComments.length})
-                    </h3>
-
-                    {/* Add comment */}
-                    <div className="flex gap-2 mt-3">
-                      <input
-                        type="text"
-                        className="flex-1 px-3 py-2 border rounded-lg text-sm"
-                        placeholder="Add a comment…"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                      />
-                      <button
-                        onClick={handleAddComment}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-lg text-sm"
-                      >
-                        Add
-                      </button>
-                    </div>
-                    <div className="space-y-3 max-h-56 mt-5 overflow-y-auto pr-1">
-                      {issueComments.length === 0 && (
-                        <p className="text-sm text-gray-400">No comments yet</p>
-                      )}
-
-                      {issueComments.map((c) => (
-                        <div
-                          key={c.id}
-                          className="bg-gray-100 rounded-lg p-3 text-sm"
-                        >
-                          <p className="text-gray-800">{c.comment}</p>
-                          <p className="text-xs text-gray-500 mt-1 text-right">
-                            — {c.author_name}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* ===== RIGHT PANEL ===== */}
-                <div className="bg-gray-50 rounded-xl p-4 space-y-4 h-fit">
-                  <h3 className="font-semibold text-sm text-gray-700">
-                    Planning
-                  </h3>
-
-                  {/* Priority */}
-                  <div>
-                    <label className="text-xs font-medium text-gray-600">
-                      Priority
-                    </label>
-                    <select
-                      className="w-full border rounded px-2 py-1 mt-1 capitalize text-sm"
-                      value={issueForm.priority}
-                      onChange={(e) => handleUpdate("priority", e.target.value)}
-                    >
-                      {["highest", "high", "medium", "low", "lowest"].map(
-                        (p) => (
-                          <option key={p} value={p}>
-                            {p}
-                          </option>
-                        )
-                      )}
-                    </select>
-                  </div>
-
-                  {/* Dates */}
-                  <div>
-                    <label className="text-xs font-medium text-gray-600">
-                      Start Date
-                    </label>
-                    <input
-                      type="date"
-                      className="w-full border rounded px-2 py-1 mt-1 text-sm"
-                      value={issueForm.start_date || ""}
-                      onChange={(e) =>
-                        handleUpdate("start_date", e.target.value)
-                      }
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-xs font-medium text-gray-600">
-                      Target Date
-                    </label>
-                    <input
-                      type="date"
-                      className="w-full border rounded px-2 py-1 mt-1 text-sm"
-                      value={issueForm.target_date || ""}
-                      onChange={(e) =>
-                        handleUpdate("target_date", e.target.value)
-                      }
-                    />
-                  </div>
-
-                  {/* Story Points */}
-                  {modalIssue.type === "story" && (
-                    <div>
-                      <label className="text-xs font-medium text-gray-600">
-                        Story Points
-                      </label>
-                      <select
-                        className="w-full border rounded px-2 py-1 mt-1 text-sm"
-                        value={issueForm.story_points || ""}
-                        onChange={(e) =>
-                          handleUpdate("story_points", e.target.value)
-                        }
-                      >
-                        <option value="">—</option>
-                        {[0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89].map((sp) => (
-                          <option key={sp} value={sp}>
-                            {sp}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {/* Related */}
-                  <div className="pt-3 border-t">
-                    <h3 className="font-semibold text-sm mb-1">Related Work</h3>
-                    <button
-                      onClick={() => setShowParentModal(true)}
-                      className="text-blue-600 text-xs hover:underline"
-                    >
-                      + Add parent work item
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-       
-</div>
-        {/* ================= ASSIGN SPRINT ================= */}
-      
       <div className="flex justify-between  p-3 -mt-19 items-center gap-3">
         <div>
           <span className="text-sm text-gray-500">
@@ -815,6 +457,16 @@ const Backlog = ({
           </button>
         </div>
       </div>
+
+      <BacklogModal
+        modalIssue={modalIssue}
+        setModalIssue={setModalIssue}
+        users={users}
+        issueComments={issueComments}
+        newComment={newComment}
+        setNewComment={setNewComment}
+        handleAddComment={handleAddComment}
+      />
     </>
   );
 };

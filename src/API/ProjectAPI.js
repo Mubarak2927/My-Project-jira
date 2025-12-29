@@ -503,9 +503,20 @@ export const updateGlobalIssueStatus = async (issue_id, status) => {
 export const getSprintIssues = async (sprintId) => {
   try {
     const response = await API.get(`/global/sprints/${sprintId}/stats`);
-    return response.data.issues || []; // ⚠️ return an array
+    return response.data.issues || []; 
   } catch (error) {
     throw error.response?.data?.message || "Failed to fetch sprint issues";
   }
 };
 
+/* Fetch all issues */
+export const getAllIssues = async () => {
+  const res = await axios.get("/issues/");
+  return res.data;
+};
+
+/* Create link */
+export const createIssueLink = async (payload) => {
+  const res = await axios.post("/links/", payload);
+  return res.data;
+};
