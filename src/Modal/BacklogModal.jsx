@@ -1,7 +1,8 @@
+// BacklogModal.jsx
 import React, { useEffect, useState } from "react";
 import { X, SaveAll, RotateCcw, Link2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { updateIssue } from "../API/ProjectAPI";
+import { updateIssue, getLinksByIssueId, deleteLinkById } from "../API/ProjectAPI";
 import ParentPickerModal from "./ParentPickerModal";
 
 const BacklogModal = ({
@@ -17,9 +18,9 @@ const BacklogModal = ({
   const [issueForm, setIssueForm] = useState({});
   const [originalIssue, setOriginalIssue] = useState(null);
   const [showParentPicker, setShowParentPicker] = useState(false);
+  const [linkedParents, setLinkedParents] = useState([]);
 
-
-  /* ================= INIT ================= */
+  /* ================= INIT & FETCH LINKED PARENTS ================= */
   useEffect(() => {
     if (!modalIssue) return;
 
@@ -31,12 +32,27 @@ const BacklogModal = ({
       story_points: modalIssue.story_points ?? null,
       status: modalIssue.status || "",
       assignee_id: modalIssue.assignee_id ?? null,
-      parent_id: modalIssue.parent_id ?? null, // 👈 parent link
+      parent_ids: modalIssue.parent_ids || (modalIssue.parent_id ? [modalIssue.parent_id] : []),
     };
 
     setIssueForm(structuredClone(snapshot));
     setOriginalIssue(structuredClone(snapshot));
-  }, [modalIssue]);
+
+    // Always fetch linked parents when modal opens
+    fetchLinkedParents();
+  }, [modalIssue?.id]);
+
+  /* ================= FETCH LINKED PARENTS ================= */
+  const fetchLinkedParents = async () => {
+    if (!modalIssue) return;
+    try {
+      const data = await getLinksByIssueId(modalIssue.id);
+      setLinkedParents(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch linked parents");
+    }
+  };
 
   /* ================= HANDLERS ================= */
   const handleUpdate = (field, value) => {
@@ -49,7 +65,7 @@ const BacklogModal = ({
     const payload = {
       ...issueForm,
       assignee_id: issueForm.assignee_id || null,
-      parent_id: issueForm.parent_id || null,
+      parent_ids: issueForm.parent_ids || [],
       story_points:
         issueForm.story_points !== null
           ? Number(issueForm.story_points)
@@ -57,19 +73,16 @@ const BacklogModal = ({
     };
 
     try {
-      await updateIssue(modalIssue.id, payload);
-
-      setModalIssue((prev) => ({ ...prev, ...payload }));
-      setOriginalIssue(structuredClone(payload));
-
+      const updated = await updateIssue(modalIssue.id, payload);
+      setModalIssue((prev) => ({ ...prev, ...updated }));
+      setOriginalIssue(structuredClone(updated));
       toast.success("Issue updated successfully");
+      fetchLinkedParents(); // refresh linked parents after save
     } catch (err) {
       console.error(err);
       toast.error("Failed to save issue");
     }
   };
-  const storyPointsOptions = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
-
 
   const handleRestoreIssue = () => {
     if (!originalIssue) return;
@@ -81,6 +94,20 @@ const BacklogModal = ({
 
     toast("Changes restored", { icon: "↩️" });
   };
+
+  const handleRemoveParentLink = async (linkId) => {
+    if (!window.confirm("Remove this parent link?")) return;
+    try {
+      await deleteLinkById(linkId);
+      toast.success("Parent link removed");
+      fetchLinkedParents();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to remove parent link");
+    }
+  };
+
+  const storyPointsOptions = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
 
   if (!modalIssue) return null;
 
@@ -99,12 +126,12 @@ const BacklogModal = ({
                 className="text-2xl font-semibold cursor-pointer"
                 onClick={() => setIsEditingTitle(true)}
               >
-                {issueForm.name}
+                {issueForm.name || ""}
               </h2>
             ) : (
               <input
                 className="text-2xl font-semibold border rounded px-2 py-1"
-                value={issueForm.name}
+                value={issueForm.name || ""}
                 onChange={(e) => handleUpdate("name", e.target.value)}
                 onBlur={() => setIsEditingTitle(false)}
                 autoFocus
@@ -131,13 +158,27 @@ const BacklogModal = ({
             </p>
 
             <h3 className="font-semibold mt-6">
-              Discussion ({issueComments.length})
+              Discussion ({issueComments?.length || 0})
             </h3>
+
+            <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
+              {(!issueComments || issueComments.length === 0) ? (
+                <p className="text-gray-400 text-sm">No comments yet</p>
+              ) : (
+                issueComments.map((c) => (
+                  <div key={c.id} className="bg-gray-100 p-2 rounded">
+                    <p className="text-sm font-semibold">{c.author_name}</p>
+                    <p className="text-sm">{c.comment}</p>
+                    <p className="text-xs text-gray-500">{new Date(c.created_at).toLocaleString()}</p>
+                  </div>
+                ))
+              )}
+            </div>
 
             <div className="flex gap-2 mt-3">
               <input
                 className="flex-1 border rounded px-3 py-2"
-                value={newComment}
+                value={newComment || ""}
                 onChange={(e) => setNewComment(e.target.value)}
               />
               <button
@@ -158,7 +199,7 @@ const BacklogModal = ({
               <label className="text-xs">Priority</label>
               <select
                 className="w-full border rounded px-2 py-1 mt-1"
-                value={issueForm.priority}
+                value={issueForm.priority || ""}
                 onChange={(e) =>
                   handleUpdate("priority", e.target.value)
                 }
@@ -197,70 +238,97 @@ const BacklogModal = ({
 
             {/* Story Points – only for story */}
             {modalIssue.type === "story" && (
-  <div>
-    <label className="text-xs">Story Points</label>
-    <select
-      className="w-full border rounded px-2 py-1 mt-1"
-      value={issueForm.story_points ?? ""}
-      onChange={(e) =>
-        handleUpdate(
-          "story_points",
-          e.target.value === "" ? null : Number(e.target.value)
-        )
-      }
-    >
-      <option value="">Select points</option>
-      {storyPointsOptions.map((point) => (
-        <option key={point} value={point}>
-          {point}
-        </option>
-      ))}
-    </select>
-  </div>
-)}
+              <div>
+                <label className="text-xs">Story Points</label>
+                <select
+                  className="w-full border rounded px-2 py-1 mt-1"
+                  value={issueForm.story_points ?? ""}
+                  onChange={(e) =>
+                    handleUpdate(
+                      "story_points",
+                      e.target.value === "" ? null : Number(e.target.value)
+                    )
+                  }
+                >
+                  <option value="">Select points</option>
+                  {storyPointsOptions.map((point) => (
+                    <option key={point} value={point}>
+                      {point}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
+            {/* RELATED WORK – MULTIPLE PARENTS */}
+            <div>
+              <label className="text-xs">Related Work</label>
 
-            {/* RELATED WORK – PARENT */}
-            {/* RELATED WORK – PARENT */}
-<div>
-  <label className="text-xs">Related Work</label>
+              {/* Existing parent IDs (temporary display) */}
+              {(issueForm.parent_ids || []).length > 0 && (
+                <div className="space-y-1 mt-1">
+                  {(issueForm.parent_ids || []).map((id) => (
+                    <div
+                      key={id}
+                      className="flex items-center justify-between bg-white border rounded px-2 py-1"
+                    >
+                      <span className="text-sm">Parent ID: {id}</span>
+                      <button
+                        onClick={() => {
+                          const updatedParents = (issueForm.parent_ids || []).filter(
+                            (pid) => pid !== id
+                          );
+                          setIssueForm((prev) => ({ ...prev, parent_ids: updatedParents }));
+                          setModalIssue((prev) => ({ ...prev, parent_ids: updatedParents }));
+                        }}
+                        className="text-red-500 text-xs"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-  {issueForm.parent_id ? (
-    <div className="flex items-center justify-between bg-white border rounded px-2 py-1 mt-1">
-      <span className="text-sm">
-        Parent ID: {issueForm.parent_id}
-      </span>
-      <button
-        onClick={() => handleUpdate("parent_id", null)}
-        className="text-red-500 text-xs"
-      >
-        Remove
-      </button>
-    </div>
-  ) : (
-    <button
-      className="flex items-center gap-1 text-blue-600 text-sm mt-1"
-      onClick={() => setShowParentPicker(true)}
-    >
-      <Link2 size={14} />
-      Add parent link
-    </button>
-  )}
-</div>
+              {/* API-linked parents */}
+              {linkedParents.length > 0 && (
+                <div className="mt-2 space-y-1">
+                  {linkedParents.map((link) => (
+                    <div
+                      key={link.id}
+                      className="flex items-center justify-between bg-gray-100 border rounded px-2 py-1"
+                    >
+                      <span className="text-sm">{link.parent_name} ({link.parent_type})</span>
+                      <button
+                        onClick={() => handleRemoveParentLink(link.id)}
+                        className="text-red-500 text-xs"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
+              <button
+                className="flex items-center gap-1 text-blue-600 text-sm mt-1"
+                onClick={() => setShowParentPicker(true)}
+              >
+                <Link2 size={14} />
+                Add parent link
+              </button>
+            </div>
           </div>
         </div>
       </div>
-      {showParentPicker && (
-  <ParentPickerModal
-    issue={modalIssue}
-    onClose={() => setShowParentPicker(false)}
-    onLinked={(parent) =>
-      handleUpdate("parent_id", parent.id)
-    }
-  />
-)}
 
+      {showParentPicker && (
+        <ParentPickerModal
+          issue={modalIssue}
+          onClose={() => setShowParentPicker(false)}
+          onLinked={() => fetchLinkedParents()}
+        />
+      )}
     </div>
   );
 };

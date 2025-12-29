@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { getGlobalSprintBoard, getGlobalSprints, updateGlobalIssueStatus } from "../API/projectAPI";
+import { getGlobalSprintBoard, getGlobalSprints, updateGlobalIssueStatus, completeGlobalSprint } from "../API/projectAPI";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import toast from "react-hot-toast"; // for notifications
 
 const CommonBoard = () => {
   const [sprints, setSprints] = useState([]);
@@ -27,48 +28,73 @@ const CommonBoard = () => {
   }, []);
 
   const onDragEnd = async (result) => {
-  const { source, destination, draggableId } = result;
-  if (!destination) return;
+    const { source, destination, draggableId } = result;
+    if (!destination) return;
 
-  try {
-    // deep clone columns
-    const newColumns = board.columns.map(col => ({
-      ...col,
-      issues: [...col.issues]
-    }));
+    try {
+      const newColumns = board.columns.map(col => ({
+        ...col,
+        issues: [...col.issues]
+      }));
 
-    const sourceColIndex = newColumns.findIndex(col => col.column_info.id === source.droppableId);
-    const destColIndex = newColumns.findIndex(col => col.column_info.id === destination.droppableId);
+      const sourceColIndex = newColumns.findIndex(col => col.column_info.id === source.droppableId);
+      const destColIndex = newColumns.findIndex(col => col.column_info.id === destination.droppableId);
 
-    const [movedIssue] = newColumns[sourceColIndex].issues.splice(source.index, 1);
-    newColumns[destColIndex].issues.splice(destination.index, 0, movedIssue);
+      const [movedIssue] = newColumns[sourceColIndex].issues.splice(source.index, 1);
+      newColumns[destColIndex].issues.splice(destination.index, 0, movedIssue);
 
-    // update board with new columns
-    setBoard({ ...board, columns: newColumns });
+      setBoard({ ...board, columns: newColumns });
 
-    // update backend
-    await updateGlobalIssueStatus(
-  draggableId,
-  newColumns[destColIndex].column_info.status // ✅ CORRECT
-);
-console.log("BOARD DATA 👉", board);
+      // Update backend
+      await updateGlobalIssueStatus(draggableId, newColumns[destColIndex].column_info.status);
 
-const refreshedBoard = await getGlobalSprintBoard(board.sprint_id);
-setBoard(refreshedBoard.board);
+      // Refresh board after update
+      const refreshedBoard = await getGlobalSprintBoard(board.sprint_id);
+      setBoard(refreshedBoard.board);
 
-  } catch (err) {
-    console.error("Failed to update issue status", err);
-  }
-};
+    } catch (err) {
+      console.error("Failed to update issue status", err);
+      toast.error("Failed to update issue status");
+    }
+  };
 
+  const handleCompleteSprint = async () => {
+    if (!board) return;
 
+    // Check if all issues in the "Done" column are completed
+    const doneColumn = board.columns.find(col => col.column_info.status.toLowerCase() === "done");
+    if (!doneColumn || doneColumn.issues.length === 0) {
+      toast.error("Cannot complete sprint: No tasks in Done column!");
+      return;
+    }
+
+    try {
+      await completeGlobalSprint(board.sprint_id);
+      toast.success("Sprint completed successfully!");
+
+      // Optionally, refresh the board or navigate to completed sprint page
+      setBoard(null); // reset board
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to complete sprint");
+    }
+  };
 
   if (loading) return <div className="text-white">Loading Board...</div>;
   if (!board) return <div className="text-white">No Board Found</div>;
 
   return (
-    <div className="flex  gap-4 overflow-x-auto p-4 bg-gray-100 h-[75vh] overflow-y-auto">
-      
+    <div className="flex flex-col gap-4 overflow-x-auto p-4 bg-gray-100 h-[75vh] overflow-y-auto">
+      {/* Complete Sprint Button */}
+      <div className="mb-4">
+        <button
+          onClick={handleCompleteSprint}
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+          Complete Sprint
+        </button>
+      </div>
+
       <DragDropContext onDragEnd={onDragEnd}>
         {board.columns.map((col) => (
           <Droppable droppableId={col.column_info.id} key={col.column_info.id}>

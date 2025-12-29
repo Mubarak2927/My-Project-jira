@@ -510,13 +510,25 @@ export const getSprintIssues = async (sprintId) => {
 };
 
 /* Fetch all issues */
-export const getAllIssues = async () => {
-  const res = await axios.get("/issues/");
-  return res.data;
+export const getAllIssues = async (projectId) => {
+  const res = await API.get("/issues/", {
+    params: { project_id: projectId },
+  });
+  return Array.isArray(res.data) ? res.data : res.data.items || [];
 };
+
 
 /* Create link */
 export const createIssueLink = async (payload) => {
-  const res = await axios.post("/links/", payload);
+  const res = await API.post("/links/", payload);
   return res.data;
 };
+export const getLinkById = async (linkId) => {
+    const response = await API.get(`/links/${linkId}`);
+    return response.data;
+  }
+ export const deleteLinkById = async (linkId) => {
+    const response = await API.delete(`/links/${linkId}`);
+    return response.data;
+};
+

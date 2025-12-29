@@ -1,19 +1,27 @@
+// ParentPickerModal.jsx
 import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
-import { getAllIssues, createIssueLink } from "../API/ProjectAPI";
+import { createIssueLink, getAllIssues } from "../API/ProjectAPI";
 
 const ParentPickerModal = ({ issue, onClose, onLinked }) => {
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [linking, setLinking] = useState(false);
+  const [selectedParents, setSelectedParents] = useState([]);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await getAllIssues();
-        setIssues(
-          data.filter((i) => i.id !== issue.id) // ❌ self link avoid
+        const data = await getAllIssues(issue.project_id);
+        const list = Array.isArray(data) ? data : data.items || [];
+
+        // Allow all types except self
+        const parentCandidates = list.filter(
+          (i) => i.id !== issue.id && ["epic", "bug", "story", "task", "subtask"].includes(i.type.toLowerCase())
         );
+
+        setIssues(parentCandidates);
       } catch {
         toast.error("Failed to load issues");
       } finally {
@@ -21,24 +29,51 @@ const ParentPickerModal = ({ issue, onClose, onLinked }) => {
       }
     };
     load();
-  }, [issue.id]);
+  }, [issue.id, issue.project_id]);
 
-  const handleLink = async (parent) => {
+  const normalizeType = (type) => {
+    switch (type.toLowerCase()) {
+      case "epic":
+      case "issue":
+        return type.toLowerCase();
+      case "story":
+        return "issue";
+      default:
+        return "issue";
+    }
+  };
+
+  const toggleSelect = (parent) => {
+    setSelectedParents((prev) =>
+      prev.includes(parent.id)
+        ? prev.filter((id) => id !== parent.id)
+        : [...prev, parent.id]
+    );
+  };
+
+  const handleLinkAll = async () => {
+    if (linking || selectedParents.length === 0) return;
+
     try {
-      await createIssueLink({
-        source_id: parent.id,
-        source_type: parent.type,
-        target_id: issue.id,
-        target_type: "issue",
-        reason: "relates_to",
-      });
-
-      toast.success("Parent linked");
-      onLinked(parent);
+      setLinking(true);
+      for (let pid of selectedParents) {
+        const parent = issues.find((i) => i.id === pid);
+        await createIssueLink({
+          source_id: parent.id,
+          source_type: normalizeType(parent.type),
+          target_id: issue.id,
+          target_type: "issue",
+          reason: "relates_to",
+        });
+      }
+      toast.success("Parents linked");
+      onLinked(); // refresh parent links in BacklogModal
       onClose();
     } catch (err) {
       console.error(err);
       toast.error("Link failed");
+    } finally {
+      setLinking(false);
     }
   };
 
@@ -46,7 +81,7 @@ const ParentPickerModal = ({ issue, onClose, onLinked }) => {
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white w-[600px] max-h-[80vh] rounded-xl shadow-xl flex flex-col">
         <div className="flex justify-between items-center px-4 py-3 border-b">
-          <h3 className="font-semibold">Select Parent</h3>
+          <h3 className="font-semibold">Select Parent(s)</h3>
           <button onClick={onClose}>
             <X />
           </button>
@@ -55,23 +90,35 @@ const ParentPickerModal = ({ issue, onClose, onLinked }) => {
         <div className="overflow-y-auto p-4 space-y-2">
           {loading ? (
             <p>Loading...</p>
+          ) : issues.length === 0 ? (
+            <p className="text-center text-sm text-gray-500">
+              No parent issues available
+            </p>
           ) : (
             issues.map((i) => (
               <div
                 key={i.id}
-                className="border rounded px-3 py-2 hover:bg-gray-50 cursor-pointer flex justify-between"
-                onClick={() => handleLink(i)}
+                className={`border rounded px-3 py-2 cursor-pointer flex justify-between items-center ${
+                  linking ? "opacity-50 pointer-events-none" : "hover:bg-gray-50"
+                } ${selectedParents.includes(i.id) ? "bg-blue-100" : ""}`}
+                onClick={() => toggleSelect(i)}
               >
                 <div>
                   <p className="font-medium">{i.name}</p>
-                  <p className="text-xs text-gray-500">
-                    {i.type.toUpperCase()}
-                  </p>
+                  <p className="text-xs text-gray-500">{i.type.toUpperCase()}</p>
                 </div>
+                {selectedParents.includes(i.id) && <span>✔️</span>}
               </div>
             ))
           )}
         </div>
+
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded m-4"
+          onClick={handleLinkAll}
+        >
+          Link Selected
+        </button>
       </div>
     </div>
   );
