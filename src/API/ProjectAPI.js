@@ -511,24 +511,33 @@ export const getSprintIssues = async (sprintId) => {
 
 /* Fetch all issues */
 export const getAllIssues = async (projectId) => {
-  const res = await API.get("/issues/", {
-    params: { project_id: projectId },
-  });
+  const res = await API.get("/issues/", { params: { project_id: projectId } });
   return Array.isArray(res.data) ? res.data : res.data.items || [];
 };
-
 
 /* Create link */
 export const createIssueLink = async (payload) => {
   const res = await API.post("/links/", payload);
   return res.data;
 };
+
+/* Get link by ID */
 export const getLinkById = async (linkId) => {
-    const response = await API.get(`/links/${linkId}`);
-    return response.data;
-  }
- export const deleteLinkById = async (linkId) => {
-    const response = await API.delete(`/links/${linkId}`);
-    return response.data;
+  const res = await API.get(`/links/${linkId}`);
+  return res.data;
 };
+
+/* Delete link by ID */
+export const deleteLinkById = async (linkId) => {
+  const res = await API.delete(`/links/${linkId}`);
+  return res.data;
+};
+
+/* ✅ Get ALL links related to an ISSUE */
+export const getLinksByIssueId = async (issueId) => {
+  const res = await API.get("/links/", { params: { item_id: issueId } });
+  if (!res.data) return [];
+  return Array.isArray(res.data) ? res.data : [res.data];
+};
+
 

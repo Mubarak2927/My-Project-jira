@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getGlobalSprintBoard, getGlobalSprints, updateGlobalIssueStatus, completeGlobalSprint } from "../API/projectAPI";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { Bug, CheckSquare, BookOpen, Layers } from "lucide-react";
 import toast from "react-hot-toast"; // for notifications
 
 const CommonBoard = () => {
@@ -26,6 +27,7 @@ const CommonBoard = () => {
     };
     fetchBoard();
   }, []);
+  
 
   const onDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
@@ -72,7 +74,6 @@ const CommonBoard = () => {
       await completeGlobalSprint(board.sprint_id);
       toast.success("Sprint completed successfully!");
 
-      // Optionally, refresh the board or navigate to completed sprint page
       setBoard(null); // reset board
     } catch (err) {
       console.error(err);
@@ -80,13 +81,13 @@ const CommonBoard = () => {
     }
   };
 
-  if (loading) return <div className="text-white">Loading Board...</div>;
-  if (!board) return <div className="text-white">No Board Found</div>;
+  if (loading) return <div className="">Loading Board...</div>;
+  if (!board) return <div className="">No Board Found</div>;
 
   return (
-    <div className="flex flex-col gap-4 overflow-x-auto p-4 bg-gray-100 h-[75vh] overflow-y-auto">
-      {/* Complete Sprint Button */}
-      <div className="mb-4">
+    <>
+    <div>
+      <div className="mb-4 flex justify-end">
         <button
           onClick={handleCompleteSprint}
           className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
@@ -94,6 +95,12 @@ const CommonBoard = () => {
           Complete Sprint
         </button>
       </div>
+
+    </div>
+    
+    <div className="flex  gap-4 overflow-x-auto p-4 bg-gray-100 h-[70vh] overflow-y-auto">
+      {/* Complete Sprint Button */}
+      
 
       <DragDropContext onDragEnd={onDragEnd}>
         {board.columns.map((col) => (
@@ -117,7 +124,9 @@ const CommonBoard = () => {
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
                         >
-                          {issue.name}
+                           <p className="capitalize">{issue.name}</p>
+                           <p className="text-blue-500">{issue.type}</p>
+                          
                         </div>
                       )}
                     </Draggable>
@@ -130,6 +139,7 @@ const CommonBoard = () => {
         ))}
       </DragDropContext>
     </div>
+    </>
   );
 };
 

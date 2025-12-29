@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
-import { createIssueLink, getAllIssues } from "../API/ProjectAPI";
+import { createIssueLink, getAllIssues } from '../API/projectAPI'
 
 const ParentPickerModal = ({ issue, onClose, onLinked }) => {
   const [issues, setIssues] = useState([]);
@@ -52,12 +52,14 @@ const ParentPickerModal = ({ issue, onClose, onLinked }) => {
   };
 
   const handleLinkAll = async () => {
-    if (linking || selectedParents.length === 0) return;
+  if (linking || selectedParents.length === 0) return;
 
-    try {
-      setLinking(true);
-      for (let pid of selectedParents) {
-        const parent = issues.find((i) => i.id === pid);
+  try {
+    setLinking(true);
+    let successCount = 0;
+    for (let pid of selectedParents) {
+      const parent = issues.find((i) => i.id === pid);
+      try {
         await createIssueLink({
           source_id: parent.id,
           source_type: normalizeType(parent.type),
@@ -65,17 +67,25 @@ const ParentPickerModal = ({ issue, onClose, onLinked }) => {
           target_type: "issue",
           reason: "relates_to",
         });
+        successCount++;
+      } catch (err) {
+        console.error(`Failed to link ${parent.name}`, err);
       }
-      toast.success("Parents linked");
-      onLinked(); // refresh parent links in BacklogModal
-      onClose();
-    } catch (err) {
-      console.error(err);
-      toast.error("Link failed");
-    } finally {
-      setLinking(false);
     }
-  };
+
+    if (successCount > 0) {
+      toast.success(`${successCount} parent(s) linked`);
+      onLinked(); // refresh parent links in BacklogModal
+    } else {
+      toast.error("No links succeeded");
+    }
+
+  } finally {
+    setLinking(false);
+    onClose(); // close the modal regardless of errors
+  }
+};
+
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -96,26 +106,33 @@ const ParentPickerModal = ({ issue, onClose, onLinked }) => {
             </p>
           ) : (
             issues.map((i) => (
-              <div
+              <label
                 key={i.id}
-                className={`border rounded px-3 py-2 cursor-pointer flex justify-between items-center ${
+                className={`border rounded px-3 py-2 flex justify-between items-center cursor-pointer ${
                   linking ? "opacity-50 pointer-events-none" : "hover:bg-gray-50"
                 } ${selectedParents.includes(i.id) ? "bg-blue-100" : ""}`}
-                onClick={() => toggleSelect(i)}
               >
-                <div>
-                  <p className="font-medium">{i.name}</p>
-                  <p className="text-xs text-gray-500">{i.type.toUpperCase()}</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedParents.includes(i.id)}
+                    onChange={() => toggleSelect(i)}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <p className="font-medium">{i.name}</p>
+                    <p className="text-xs text-gray-500">{i.type.toUpperCase()}</p>
+                  </div>
                 </div>
-                {selectedParents.includes(i.id) && <span>✔️</span>}
-              </div>
+              </label>
             ))
           )}
         </div>
 
         <button
-          className="bg-blue-600 text-white px-4 py-2 rounded m-4"
+          className="bg-blue-600 text-white px-4 py-2 rounded m-4 disabled:opacity-50"
           onClick={handleLinkAll}
+          disabled={linking || selectedParents.length === 0}
         >
           Link Selected
         </button>

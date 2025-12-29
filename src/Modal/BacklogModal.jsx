@@ -2,7 +2,12 @@
 import React, { useEffect, useState } from "react";
 import { X, SaveAll, RotateCcw, Link2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { updateIssue, getLinksByIssueId, deleteLinkById } from "../API/ProjectAPI";
+import { 
+  updateIssue, 
+  deleteLinkById, 
+  getLinksByIssueId, 
+  getAllIssues 
+} from '../API/projectAPI'
 import ParentPickerModal from "./ParentPickerModal";
 
 const BacklogModal = ({
@@ -30,6 +35,7 @@ const BacklogModal = ({
       start_date: modalIssue.start_date || "",
       target_date: modalIssue.target_date || "",
       story_points: modalIssue.story_points ?? null,
+      estimated_hours: modalIssue.estimated_hours ?? null,
       status: modalIssue.status || "",
       assignee_id: modalIssue.assignee_id ?? null,
       parent_ids: modalIssue.parent_ids || (modalIssue.parent_id ? [modalIssue.parent_id] : []),
@@ -38,16 +44,51 @@ const BacklogModal = ({
     setIssueForm(structuredClone(snapshot));
     setOriginalIssue(structuredClone(snapshot));
 
-    // Always fetch linked parents when modal opens
+    // ✅ Fetch linked parents whenever modal opens
     fetchLinkedParents();
   }, [modalIssue?.id]);
 
-  /* ================= FETCH LINKED PARENTS ================= */
+  /* ================= FETCH LINKED PARENTS WITH NAMES ================= */
   const fetchLinkedParents = async () => {
     if (!modalIssue) return;
+
     try {
-      const data = await getLinksByIssueId(modalIssue.id);
-      setLinkedParents(Array.isArray(data) ? data : []);
+      const links = await getLinksByIssueId(modalIssue.id);
+
+      // Fetch all issues in project to get names
+      const allIssues = await getAllIssues(modalIssue.project_id);
+
+      const parentDetails = links.map((link) => {
+        let parentId, parentType;
+
+        // Determine which side is the parent
+        if (link.target_id === modalIssue.id) {
+          parentId = link.source_id;
+          parentType = link.source_type;
+        } else {
+          parentId = link.target_id;
+          parentType = link.target_type;
+        }
+
+        const parentIssue = allIssues.find((i) => i.id === parentId);
+
+        return {
+          id: link.id, // link ID
+          parent_id: parentId,
+          parent_type: parentType,
+          parent_name: parentIssue?.name || "Unknown",
+        };
+      });
+
+      setLinkedParents(parentDetails);
+
+      // Update form parent_ids with API-linked parents
+      if (parentDetails.length > 0) {
+        setIssueForm((prev) => ({
+          ...prev,
+          parent_ids: parentDetails.map((p) => p.parent_id),
+        }));
+      }
     } catch (err) {
       console.error(err);
       toast.error("Failed to fetch linked parents");
@@ -70,17 +111,18 @@ const BacklogModal = ({
         issueForm.story_points !== null
           ? Number(issueForm.story_points)
           : null,
+      estimated_hours:
+        issueForm.estimated_hours !== null
+          ? Number(issueForm.estimated_hours)
+          : null,
     };
 
     try {
-      const updated = await updateIssue(modalIssue.id, payload);
-      setModalIssue((prev) => ({ ...prev, ...updated }));
-      setOriginalIssue(structuredClone(updated));
+      await updateIssue(modalIssue.id, payload);
       toast.success("Issue updated successfully");
-      fetchLinkedParents(); // refresh linked parents after save
+      setModalIssue(null);
     } catch (err) {
       console.error(err);
-      toast.error("Failed to save issue");
     }
   };
 
@@ -97,6 +139,7 @@ const BacklogModal = ({
 
   const handleRemoveParentLink = async (linkId) => {
     if (!window.confirm("Remove this parent link?")) return;
+
     try {
       await deleteLinkById(linkId);
       toast.success("Parent link removed");
@@ -139,11 +182,23 @@ const BacklogModal = ({
             )}
           </div>
 
-          <div className="flex gap-2">
-            <button onClick={handleRestoreIssue}><RotateCcw /></button>
-            <button onClick={handleSaveIssue}><SaveAll /></button>
-            <button onClick={() => setModalIssue(null)}>
-              <X size={22} />
+          <div className="flex gap-5">
+            <button title="Undo" className="cursor-pointer" onClick={handleRestoreIssue}>
+              <RotateCcw />
+            </button>
+            <button
+              title="Save"
+              className="bg-blue-500 cursor-pointer p-1 flex rounded-xl items-center text-white gap-2"
+              onClick={handleSaveIssue}
+            >
+              <SaveAll size={18} />Save
+            </button>
+            <button
+              title="Cancel"
+              className="cursor-pointer text-red-600"
+              onClick={() => setModalIssue(null)}
+            >
+              <X size={25} />
             </button>
           </div>
         </div>
@@ -200,9 +255,7 @@ const BacklogModal = ({
               <select
                 className="w-full border rounded px-2 py-1 mt-1"
                 value={issueForm.priority || ""}
-                onChange={(e) =>
-                  handleUpdate("priority", e.target.value)
-                }
+                onChange={(e) => handleUpdate("priority", e.target.value)}
               >
                 {["highest", "high", "medium", "low", "lowest"].map((p) => (
                   <option key={p} value={p}>{p}</option>
@@ -210,28 +263,19 @@ const BacklogModal = ({
               </select>
             </div>
 
-            {/* Start Date */}
             <div>
-              <label className="text-xs">Start Date</label>
+              <label className="text-xs">Estimated Hours</label>
               <input
-                type="date"
+                type="number"
+                min="0"
+                step="0.5"
                 className="w-full border rounded px-2 py-1 mt-1"
-                value={issueForm.start_date || ""}
+                value={issueForm.estimated_hours ?? ""}
                 onChange={(e) =>
-                  handleUpdate("start_date", e.target.value)
-                }
-              />
-            </div>
-
-            {/* Target Date */}
-            <div>
-              <label className="text-xs">Target Date</label>
-              <input
-                type="date"
-                className="w-full border rounded px-2 py-1 mt-1"
-                value={issueForm.target_date || ""}
-                onChange={(e) =>
-                  handleUpdate("target_date", e.target.value)
+                  handleUpdate(
+                    "estimated_hours",
+                    e.target.value === "" ? null : Number(e.target.value)
+                  )
                 }
               />
             </div>
@@ -270,10 +314,10 @@ const BacklogModal = ({
                   {(issueForm.parent_ids || []).map((id) => (
                     <div
                       key={id}
-                      className="flex items-center justify-between bg-white border rounded px-2 py-1"
+                      className="flex items-center justify-between  rounded px-2 py-1"
                     >
-                      <span className="text-sm">Parent ID: {id}</span>
-                      <button
+                      {/* <span className="text-sm">Parent ID: {id}</span> */}
+                      {/* <button
                         onClick={() => {
                           const updatedParents = (issueForm.parent_ids || []).filter(
                             (pid) => pid !== id
@@ -284,13 +328,13 @@ const BacklogModal = ({
                         className="text-red-500 text-xs"
                       >
                         Remove
-                      </button>
+                      </button> */}
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* API-linked parents */}
+              {/* API-linked parents WITH NAMES */}
               {linkedParents.length > 0 && (
                 <div className="mt-2 space-y-1">
                   {linkedParents.map((link) => (
@@ -298,7 +342,8 @@ const BacklogModal = ({
                       key={link.id}
                       className="flex items-center justify-between bg-gray-100 border rounded px-2 py-1"
                     >
-                      <span className="text-sm">{link.parent_name} ({link.parent_type})</span>
+                      <span className="text-sm">{link.parent_name} </span>
+                      {/* <span>({link.parent_type})</span> */}
                       <button
                         onClick={() => handleRemoveParentLink(link.id)}
                         className="text-red-500 text-xs"

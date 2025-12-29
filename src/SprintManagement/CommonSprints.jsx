@@ -26,7 +26,7 @@ const CommonSprints = () => {
   const [selectedWeek, setSelectedWeek] = useState(null);
 
   const [sprintIssues, setSprintIssues] = useState([]);
-const [issuesLoading, setIssuesLoading] = useState(false);
+  const [issuesLoading, setIssuesLoading] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -39,6 +39,11 @@ const [issuesLoading, setIssuesLoading] = useState(false);
   const totalSprintCount = sprints.length;
   const formattedTotalCount =
     totalSprintCount < 10 ? `0${totalSprintCount}` : totalSprintCount;
+
+  // Check if any sprint is running
+  const isAnySprintRunning = sprints.some(
+    (s) => (s.status ?? "").toLowerCase() === "running"
+  );
 
   useEffect(() => {
     fetchSprints();
@@ -56,24 +61,22 @@ const [issuesLoading, setIssuesLoading] = useState(false);
   }, [modalOpen]);
 
   const fetchSprintIssues = async (sprintId) => {
-  setIssuesLoading(true);
-  try {
-    const issues = await getSprintIssues(sprintId); // your API call
-    setSprintIssues(issues);
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to fetch sprint issues");
-  } finally {
-    setIssuesLoading(false);
-  }
-};
+    setIssuesLoading(true);
+    try {
+      const issues = await getSprintIssues(sprintId); // your API call
+      setSprintIssues(issues);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch sprint issues");
+    } finally {
+      setIssuesLoading(false);
+    }
+  };
 
   const fetchSprints = async () => {
     try {
       setLoading(true);
       const data = await getGlobalSprints();
-
-      // 🔥 Safe extraction: if API returns { data: [...] } or nested
       const sprintsArray = Array.isArray(data) ? data : data?.data ?? [];
       console.log("Fetched Sprints:", sprintsArray);
       setSprints(sprintsArray);
@@ -86,39 +89,37 @@ const [issuesLoading, setIssuesLoading] = useState(false);
   };
 
   const handleCreateSprint = async (e) => {
-  e.preventDefault();
-  try {
-    const newSprint = await createGlobalSprint({
-      name,
-      goal,
-      start_date: new Date(startDate).toISOString(),
-      end_date: new Date(endDate).toISOString(),
-    });
+    e.preventDefault();
+    try {
+      const newSprint = await createGlobalSprint({
+        name,
+        goal,
+        start_date: new Date(startDate).toISOString(),
+        end_date: new Date(endDate).toISOString(),
+      });
 
-    toast.success("Sprint Created Successfully");
-    setModalOpen(false);
+      toast.success("Sprint Created Successfully");
+      setModalOpen(false);
 
-    // Add the new sprint to state immediately
-    setSprints((prev) => [...prev, newSprint]);
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to create sprint");
-  }
-};
-const handleDeleteSprint = async (sprintId) => {
-  if (!window.confirm("Are you sure you want to delete this sprint?")) return;
+      setSprints((prev) => [...prev, newSprint]);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to create sprint");
+    }
+  };
 
-  try {
-    await deleteSprint(sprintId);
-    toast.success("Sprint deleted successfully");
-    setSprints((prev) => prev.filter((s) => s.id !== sprintId));
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to delete sprint");
-  }
-};
+  const handleDeleteSprint = async (sprintId) => {
+    if (!window.confirm("Are you sure you want to delete this sprint?")) return;
 
-
+    try {
+      await deleteSprint(sprintId);
+      toast.success("Sprint deleted successfully");
+      setSprints((prev) => prev.filter((s) => s.id !== sprintId));
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete sprint");
+    }
+  };
 
   const filteredSprints = sprints.filter((sprint) => {
     const nameText = sprint.name?.toLowerCase() || "";
@@ -133,6 +134,11 @@ const handleDeleteSprint = async (sprintId) => {
   });
 
   const handleStartSprint = async (sprintId) => {
+    if (isAnySprintRunning) {
+      toast.error("Another sprint is already running");
+      return;
+    }
+
     try {
       await startGlobalSprint(sprintId);
       toast.success("Sprint Started Successfully");
@@ -194,10 +200,10 @@ const handleDeleteSprint = async (sprintId) => {
             Total Sprints:{" "}
             <span className="font-bold text-black">{formattedTotalCount}</span>
           </p>
-          <p>
+          {/* <p>
             Running Sprints:{" "}
             <span className="font-bold text-green-600">{formattedRunningCount}</span>
-          </p>
+          </p> */}
         </div>
 
         <input
@@ -232,16 +238,16 @@ const handleDeleteSprint = async (sprintId) => {
                 className="hover:bg-gray-200 border-gray-300 border-b"
               >
                 <td className="p-3">{(currentPage - 1) * PAGE_SIZE + index + 1}</td>
-               <td
-  className="p-3 cursor-pointer"
-  onClick={() => {
-    setSelectedSprint(sprint);
-    setDetailsModalOpen(true);
-    fetchSprintIssues(sprint.id); // fetch issues on click
-  }}
->
-  <p className="hover:underline">{sprint.name}</p>
-</td>
+                <td
+                  className="p-3 cursor-pointer"
+                  onClick={() => {
+                    setSelectedSprint(sprint);
+                    setDetailsModalOpen(true);
+                    fetchSprintIssues(sprint.id);
+                  }}
+                >
+                  <p className="hover:underline">{sprint.name}</p>
+                </td>
                 <td className="p-3">{sprint.goal}</td>
                 <td className="p-3">{sprint.issue_count ?? 0}</td>
                 <td className="p-3">
@@ -255,14 +261,13 @@ const handleDeleteSprint = async (sprintId) => {
                     <span className="capitalize">{sprint.status}</span>
                   )}
                 </td>
-                <td className="text-center">
-  <Trash2
-    size={15}
-    className="text-red-600 cursor-pointer"
-    onClick={() => handleDeleteSprint(sprint.id)}
-  />
-</td>
-
+                <td className=" flex justify-center  items-center mt-3.5 text-center">
+                  <Trash2
+                    size={15}
+                    className="text-red-600 cursor-pointer"
+                    onClick={() => handleDeleteSprint(sprint.id)}
+                  />
+                </td>
               </tr>
             ))}
           </tbody>
@@ -283,75 +288,83 @@ const handleDeleteSprint = async (sprintId) => {
       </div>
 
       {/* DETAILS MODAL */}
-     {/* DETAILS MODAL */}
-{detailsModalOpen && selectedSprint && (
-  <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-    <div className="bg-white p-6 rounded-xl w-full max-w-md">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Sprint Details</h2>
-      </div>
-      <div className="space-y-3">
-        <p>
-          <span className="font-semibold">Name:</span> {selectedSprint.name}
-        </p>
-        <p>
-          <span className="font-semibold">Goal:</span> {selectedSprint.goal}
-        </p>
-        <p>
-          <span className="font-semibold">Status:</span>{" "}
-          <span className="capitalize">{selectedSprint.status}</span>
-        </p>
-        <p>
-          <span className="font-semibold">Issues Count:</span> {selectedSprint.issue_count ?? 0}
-        </p>
-        <p>
-          <span className="font-semibold">Duration:</span>{" "}
-          {new Date(selectedSprint.start_date).toLocaleDateString()} -{" "}
-          {new Date(selectedSprint.end_date).toLocaleDateString()}
-        </p>
+      {detailsModalOpen && selectedSprint && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-xl w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Sprint Details</h2>
+            </div>
+            <div className="space-y-3">
+              <p>
+                <span className="font-semibold">Name:</span> {selectedSprint.name}
+              </p>
+              <p>
+                <span className="font-semibold">Goal:</span> {selectedSprint.goal}
+              </p>
+              <p>
+                <span className="font-semibold">Status:</span>{" "}
+                <span className="capitalize">{selectedSprint.status}</span>
+              </p>
+              <p>
+                <span className="font-semibold">Issues Count:</span> {selectedSprint.issue_count ?? 0}
+              </p>
+              <p>
+                <span className="font-semibold">Duration:</span>{" "}
+                {new Date(selectedSprint.start_date).toLocaleDateString()} -{" "}
+                {new Date(selectedSprint.end_date).toLocaleDateString()}
+              </p>
 
-        <div className="mt-4">
-          <h3 className="font-semibold text-lg">Issues</h3>
-          {issuesLoading ? (
-            <p>Loading issues...</p>
-          ) : sprintIssues.length === 0 ? (
-            <p>No issues found.</p>
-          ) : (
-            <ul className="list-disc ml-5 mt-2">
-              {sprintIssues.map((issue) => (
-                <li key={issue.id}>
-                  {issue.name} - {issue.type} - {issue.status}
-                </li>
-              ))}
-            </ul>
-          )}
+              <div className="mt-4">
+                <h3 className="font-semibold text-lg">Issues</h3>
+                {issuesLoading ? (
+                  <p>Loading issues...</p>
+                ) : sprintIssues.length === 0 ? (
+                  <p>No issues found.</p>
+                ) : (
+                  <ul className="list-disc ml-5 mt-2">
+                    {sprintIssues.map((issue) => (
+                      <li key={issue.id}>
+                        {issue.name} - {issue.type} - {issue.status}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-5">
+              {selectedSprint.issue_count > 0 &&
+               selectedSprint.status !== "running" &&
+               !isAnySprintRunning && (
+                <button
+                  onClick={() => handleStartSprint(selectedSprint.id)}
+                  className="px-4 py-2 bg-green-600 text-white rounded"
+                >
+                  Start Sprint
+                </button>
+              )}
+
+              {selectedSprint.status !== "running" && isAnySprintRunning && (
+                <span className="px-4 py-2 text-gray-500">
+                  Another sprint is running
+                </span>
+              )}
+
+              {selectedSprint.status === "running" && (
+                <span className="px-4 py-2 text-green-600 font-semibold">
+                  Running Sprint
+                </span>
+              )}
+
+              <button
+                onClick={() => setDetailsModalOpen(false)}
+                className="px-4 py-2 bg-purple-600 text-white rounded"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="flex justify-end gap-2 mt-5">
-        {selectedSprint.issue_count > 0 && selectedSprint.status !== "running" && (
-          <button
-            onClick={() => handleStartSprint(selectedSprint.id)}
-            className="px-4 py-2 bg-green-600 text-white rounded"
-          >
-            Start Sprint
-          </button>
-        )}
-        {selectedSprint.status === "running" && (
-          <span className="px-4 py-2 text-green-600 font-semibold">
-            Running Sprint
-          </span>
-        )}
-        <button
-          onClick={() => setDetailsModalOpen(false)}
-          className="px-4 py-2 bg-purple-600 text-white rounded"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
 
       {/* CREATE MODAL */}
       {modalOpen && (
