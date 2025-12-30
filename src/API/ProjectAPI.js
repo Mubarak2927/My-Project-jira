@@ -534,8 +534,8 @@ export const deleteLinkById = async (linkId) => {
 };
 
 /* ✅ Get ALL links related to an ISSUE */
-export const getLinksByIssueId = async (issueId) => {
-  const res = await API.get("/links/", { params: { item_id: issueId } });
+export const getLinksByIssueId = async (linkId) => {
+  const res = await API.get(`/links/linkId=${linkId}`, );
   if (!res.data) return [];
   return Array.isArray(res.data) ? res.data : [res.data];
 };

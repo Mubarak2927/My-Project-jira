@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Upload, FileText, Download, Trash2, Eye } from "lucide-react";
+import { Upload, FileText, Download, Trash2 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import {
   getAllProjects,
   getProjectDocuments,
   deleteProjectDocument,
-  downloadProjectDocument, // ✅ Added download API
+  downloadProjectDocument,
 } from "../API/projectAPI";
 import UploadDocModal from "../Modal/UploadDocModal";
 
@@ -14,7 +14,6 @@ const Docs = () => {
   const [selectedProject, setSelectedProject] = useState("");
   const [documents, setDocuments] = useState([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [viewDoc, setViewDoc] = useState(null); // ❗ kept
 
   // Fetch projects
   useEffect(() => {
@@ -47,83 +46,101 @@ const Docs = () => {
   };
 
   return (
-    <div className="h-[93vh] bg-gray-100 p-6 rounded-2xl">
-      <Toaster />
+    <div className="h-[93vh] bg-gray-300 p-6 rounded-2xl">
+      <Toaster position="top-right" />
       <h1 className="text-3xl font-bold mb-6">📂 Project Documents</h1>
 
       {/* Project Select */}
-      <div className="flex justify-between mb-4">
-        <select
-          value={selectedProject}
-          onChange={(e) => setSelectedProject(e.target.value)}
-          className="p-2 rounded-lg border"
-        >
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+      <div className="flex justify-between mb-10">
+        <div>
+          <label className="font-semibold">Select Projects :</label>
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            className="p-2 rounded-lg ml-3 border"
+          >
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <button
           onClick={() => setShowUploadModal(true)}
-          className="bg-blue-500 text-white flex gap-2 p-2 rounded-xl"
+          className="bg-blue-500 m text-white flex gap-2 p-2 rounded-xl"
         >
           <Upload size={18} /> Upload
         </button>
       </div>
 
       {/* Documents */}
-      <div className="grid grid-cols-3 gap-4">
-        {documents.map((doc) => (
-          <div
-            key={doc.id}
-            className="bg-white rounded-xl p-4 shadow flex flex-col gap-2"
-          >
-            <div className="flex gap-2 items-center">
-              <FileText className="text-red-500" />
-              <span className="truncate font-medium">{doc.name}</span>
-            </div>
+      {/* Documents */}
+<div className="grid grid-cols-4 p-5 gap-6 mt-5">
+  {documents.map((doc) => (
+    <div
+      key={doc.id}
+      className="relative bg-gray-100 rounded-xl p-4 shadow-md hover:shadow-lg transition"
+    >
+      {/* Folder tab */}
+      <div className="absolute -top-3 left-4 w-20 h-4 bg-gray-200 rounded-t-md"></div>
 
-            <p className="text-xs text-gray-500">
-              Uploaded by {doc.uploaded_by_name}
+      {/* Folder Body */}
+      <div className="flex flex-col gap-2 mt-2">
+        <div className="flex items-center gap-2">
+          <FileText size={22} className="text-yellow-700" />
+          <span className="font-semibold truncate">
+            {doc.name}
+          </span>
+        </div>
+        <p>
+              {doc.description}
             </p>
 
-            <div className="flex gap-4 mt-3">
-              {/* 👁️ VIEW (DIRECT OPEN) */}
-              {viewDoc && viewDoc.id === doc.id && (
-                <div>
-                  {/* Example: PDF/Image viewer modal can go here */}
-                </div>
-              )}
+       
 
-              {/* ⬇️ DOWNLOAD */}
-              <button
-                onClick={() =>
-                  downloadProjectDocument(selectedProject, doc.id)
-                }
-                className="text-blue-600"
-                title="Download"
-              >
-                <Download size={18} />
-              </button>
-
-              {/* 🗑 DELETE */}
-              <button
-                onClick={() => handleDelete(doc.id)}
-                className="text-red-600"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
+        {/* Actions */}
+        <div className="flex justify-between items-center gap-4 ">
+          <div>
+            
+               <p className="text-xs mt-5 text-gray-600">
+          <span className="font-semibold"> Uploaded by :</span>{doc.uploaded_by_name}
+        </p>
           </div>
-        ))}
+        <div className="flex gap-3">
+          <button
+            onClick={() =>
+              downloadProjectDocument(selectedProject, doc.id)
+            }
+            className="text-blue-600 hover:scale-110 transition"
+            title="Download"
+          >
+            <Download size={18} />
+          </button>
+
+          <button
+            onClick={() => handleDelete(doc.id)}
+            className="text-red-600 hover:scale-110 transition"
+            title="Delete"
+          >
+            <Trash2 size={18} />
+          </button>
+
+        </div>
+          
+        </div>
       </div>
+    </div>
+  ))}
+</div>
+
 
       {/* Upload Modal */}
       {showUploadModal && (
         <UploadDocModal
           projects={projects}
+          selectedProject={selectedProject}
           onClose={() => setShowUploadModal(false)}
           onSuccess={() =>
             getProjectDocuments(selectedProject).then(setDocuments)
