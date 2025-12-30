@@ -542,34 +542,80 @@ export const getLinksByIssueId = async (issueId) => {
 
 
 // Upload document
-export const uploadProjectDocument = async (project_id, formData) => {
+export const uploadProjectDocument = async (projectId, formData) => {
   const res = await API.post(
-    `/projects/${project_id}/documents/upload`, // must include /upload
-    formData
+    `/projects/${projectId}/documents`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
   );
   return res.data;
 };
 
-
-
-// List documents
-export const getProjectDocuments = async (project_id) => {
-  const res = await API.get(`/projects/${project_id}/documents`);
+// Get all documents
+export const getProjectDocuments = async (projectId) => {
+  const res = await API.get(`/projects/${projectId}/documents`);
   return res.data;
 };
+
+// ✅ Get single document (FOR VIEW)
+export const getSingleProjectDocument = async (projectId, documentId) => {
+  const res = await API.get(
+    `/projects/${projectId}/documents/${documentId}`
+  );
+  return res.data;
+};
+
+// ✅ Download document
+export const downloadProjectDocument = async (projectId, documentId) => {
+  try {
+    const token = localStorage.getItem("access_token"); // or wherever you store it
+
+    const response = await fetch(
+      `${API.defaults.baseURL}/projects/${projectId}/documents/${documentId}/download`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) throw new Error("Download failed");
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+
+    // Try to get filename from headers
+    const contentDisposition = response.headers.get("Content-Disposition");
+    let filename = "document";
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="(.+)"/);
+      if (match.length > 1) filename = match[1];
+    }
+
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error(err);
+    alert("Download failed");
+  }
+};
+
 
 // Delete document
-export const deleteProjectDocument = async (project_id, document_id) => {
+export const deleteProjectDocument = async (projectId, documentId) => {
   const res = await API.delete(
-    `/projects/${project_id}/documents/${document_id}`
+    `/projects/${projectId}/documents/${documentId}`
   );
   return res.data;
-};
-
-// Download document
-export const downloadProjectDocument = async (project_id, document_id) => {
-  return API.get(
-    `/projects/${project_id}/documents/${document_id}/download`,
-    { responseType: "blob" }
-  );
 };

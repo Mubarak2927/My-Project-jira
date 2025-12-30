@@ -14,7 +14,7 @@ import {
   updateIssue,
   IssueComments,
   deleteIssues, // ✅ ADD THIS API
-} from "../API/projectAPI";
+}from '../API/projectAPI'
 import toast, { Toaster } from "react-hot-toast";
 import Backlog from "./Backlog";
 

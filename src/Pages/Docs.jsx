@@ -1,105 +1,47 @@
 import React, { useEffect, useState } from "react";
-import { Upload, FileText, Download, Trash2 } from "lucide-react";
+import { Upload, FileText, Download, Trash2, Eye } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import {
-  uploadProjectDocument,
+  getAllProjects,
   getProjectDocuments,
   deleteProjectDocument,
-  downloadProjectDocument,
-  getAllProjects,
+  downloadProjectDocument, // ✅ Added download API
 } from "../API/projectAPI";
+import UploadDocModal from "../Modal/UploadDocModal";
 
 const Docs = () => {
   const [projects, setProjects] = useState([]);
-  const [selectedProject, setSelectedProject] = useState(null);
+  const [selectedProject, setSelectedProject] = useState("");
   const [documents, setDocuments] = useState([]);
-  const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [viewDoc, setViewDoc] = useState(null); // ❗ kept
 
-  // Fetch all projects
-  const fetchProjects = async () => {
-    try {
-      const data = await getAllProjects();
-      setProjects(Array.isArray(data) ? data : []);
-      if (data.length > 0) setSelectedProject(data[0].id);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load projects");
-    }
-  };
-
+  // Fetch projects
   useEffect(() => {
-    fetchProjects();
+    getAllProjects()
+      .then((data) => {
+        setProjects(data);
+        if (data.length) setSelectedProject(data[0].id);
+      })
+      .catch(() => toast.error("Failed to load projects"));
   }, []);
 
   // Fetch documents
-  const fetchDocuments = async (projectId) => {
-    if (!projectId) return;
-    try {
-      const data = await getProjectDocuments(projectId);
-      setDocuments(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load documents");
-    }
-  };
-
   useEffect(() => {
-    if (selectedProject) fetchDocuments(selectedProject);
+    if (!selectedProject) return;
+    getProjectDocuments(selectedProject)
+      .then(setDocuments)
+      .catch(() => toast.error("Failed to load documents"));
   }, [selectedProject]);
-
-  // Upload document
-  const handleUpload = async () => {
-    if (!file) return toast.error("No file selected");
-    if (!selectedProject) return toast.error("Select a project");
-
-    const formData = new FormData();
-    formData.append("file", file);          // must match API key
-    formData.append("name", file.name);     // optional
-
-    try {
-      setLoading(true);
-      await uploadProjectDocument(selectedProject, formData);
-      toast.success("File uploaded successfully!");
-      setFile(null);
-      fetchDocuments(selectedProject);
-    } catch (err) {
-      console.error(err.response?.data || err);
-      toast.error("Upload failed");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Download document
-  const handleDownload = async (doc) => {
-    if (!doc.id || !selectedProject) return;
-    try {
-      const res = await downloadProjectDocument(selectedProject, doc.id);
-      const blob = new Blob([res]);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = doc.name;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error(err);
-      toast.error("Download failed");
-    }
-  };
 
   // Delete document
   const handleDelete = async (docId) => {
-    if (!docId || !selectedProject) return;
-    if (!window.confirm("Are you sure to delete this document?")) return;
-
+    if (!window.confirm("Delete this document?")) return;
     try {
       await deleteProjectDocument(selectedProject, docId);
       toast.success("Document deleted");
-      fetchDocuments(selectedProject);
-    } catch (err) {
-      console.error(err);
+      setDocuments((prev) => prev.filter((d) => d.id !== docId));
+    } catch {
       toast.error("Delete failed");
     }
   };
@@ -109,13 +51,12 @@ const Docs = () => {
       <Toaster />
       <h1 className="text-3xl font-bold mb-6">📂 Project Documents</h1>
 
-      {/* Project Dropdown */}
-      <div className="mb-4">
-        <label className="font-medium mr-3">Select Project:</label>
+      {/* Project Select */}
+      <div className="flex justify-between mb-4">
         <select
-          className="p-2 rounded-lg border"
-          value={selectedProject || ""}
+          value={selectedProject}
           onChange={(e) => setSelectedProject(e.target.value)}
+          className="p-2 rounded-lg border"
         >
           {projects.map((p) => (
             <option key={p.id} value={p.id}>
@@ -123,53 +64,51 @@ const Docs = () => {
             </option>
           ))}
         </select>
-      </div>
 
-      {/* Upload Section */}
-      <div className="bg-white p-5 rounded-xl shadow mb-6 flex items-center gap-3">
-        <input
-          type="file"
-          id="fileUpload"
-          onChange={(e) => setFile(e.target.files[0])}
-          className="hidden"
-        />
-        <label
-          htmlFor="fileUpload"
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg cursor-pointer"
-        >
-          <Upload size={18} />
-          {file ? file.name : "Choose File"}
-        </label>
         <button
-          onClick={handleUpload}
-          disabled={!file || loading || !selectedProject}
-          className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg"
+          onClick={() => setShowUploadModal(true)}
+          className="bg-blue-500 text-white flex gap-2 p-2 rounded-xl"
         >
-          {loading ? "Uploading..." : "Upload"}
+          <Upload size={18} /> Upload
         </button>
       </div>
 
-      {/* Documents List */}
+      {/* Documents */}
       <div className="grid grid-cols-3 gap-4">
         {documents.map((doc) => (
           <div
             key={doc.id}
             className="bg-white rounded-xl p-4 shadow flex flex-col gap-2"
           >
-            <div className="flex items-center gap-2">
+            <div className="flex gap-2 items-center">
               <FileText className="text-red-500" />
-              <span className="font-medium truncate">{doc.name}</span>
+              <span className="truncate font-medium">{doc.name}</span>
             </div>
+
             <p className="text-xs text-gray-500">
               Uploaded by {doc.uploaded_by_name}
             </p>
-            <div className="flex gap-3 mt-3">
+
+            <div className="flex gap-4 mt-3">
+              {/* 👁️ VIEW (DIRECT OPEN) */}
+              {viewDoc && viewDoc.id === doc.id && (
+                <div>
+                  {/* Example: PDF/Image viewer modal can go here */}
+                </div>
+              )}
+
+              {/* ⬇️ DOWNLOAD */}
               <button
-                onClick={() => handleDownload(doc)}
+                onClick={() =>
+                  downloadProjectDocument(selectedProject, doc.id)
+                }
                 className="text-blue-600"
+                title="Download"
               >
                 <Download size={18} />
               </button>
+
+              {/* 🗑 DELETE */}
               <button
                 onClick={() => handleDelete(doc.id)}
                 className="text-red-600"
@@ -180,6 +119,17 @@ const Docs = () => {
           </div>
         ))}
       </div>
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <UploadDocModal
+          projects={projects}
+          onClose={() => setShowUploadModal(false)}
+          onSuccess={() =>
+            getProjectDocuments(selectedProject).then(setDocuments)
+          }
+        />
+      )}
     </div>
   );
 };
