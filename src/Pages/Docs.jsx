@@ -69,7 +69,7 @@ const Docs = () => {
 
         <button
           onClick={() => setShowUploadModal(true)}
-          className="bg-blue-500 m text-white flex gap-2 p-2 rounded-xl"
+          className="bg-blue-500 cursor-pointer hover:scale-103 transition text-white flex gap-2 p-2 rounded-xl"
         >
           <Upload size={18} /> Upload
         </button>
@@ -113,7 +113,7 @@ const Docs = () => {
             onClick={() =>
               downloadProjectDocument(selectedProject, doc.id)
             }
-            className="text-blue-600 hover:scale-110 transition"
+            className="text-blue-600 cursor-pointer hover:scale-105  transition"
             title="Download"
           >
             <Download size={18} />
@@ -121,7 +121,7 @@ const Docs = () => {
 
           <button
             onClick={() => handleDelete(doc.id)}
-            className="text-red-600 hover:scale-110 transition"
+            className="text-red-600 cursor-pointer hover:scale-106  transition"
             title="Delete"
           >
             <Trash2 size={18} />

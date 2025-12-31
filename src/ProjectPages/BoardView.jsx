@@ -8,6 +8,8 @@ import {
   getAllUsers,
   getBoardByProjectId,
   getRunningSprints,
+  getSprint,
+  getSprintBoard,
   sprintTaskMoveColumn,
 } from "../API/projectAPI";
 import toast from "react-hot-toast";
@@ -35,6 +37,10 @@ export default function JiraBoard() {
   const [selectedIssueId, setSelectedIssueId] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
 
+  const [sprints, setSprints] = useState([]);
+const [selectedSprintId, setSelectedSprintId] = useState("");
+
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -57,6 +63,47 @@ export default function JiraBoard() {
       console.error("Failed to fetch users", err);
     }
   };
+  const fetchProjectSprints = async () => {
+  try {
+    const res = await getSprint(projectId);
+    setSprints(res || []);
+  } catch (err) {
+    console.error("Failed to fetch sprints", err);
+  }
+};
+useEffect(() => {
+  if (projectId) {
+    fetchProjectSprints();
+  }
+}, [projectId]);
+
+const loadSprintBoard = async (sprintId) => {
+  try {
+    setLoading(true);
+    const res = await getSprintBoard(sprintId);
+
+    let boardColumns = res?.columns?.board?.columns || [];
+
+    boardColumns = boardColumns.map((col) => ({
+      ...col,
+      column_info: col.column_info || {
+        id: col.id,
+        name: col.name,
+        status: col.status || col.name,
+      },
+      issues: col.issues || [],
+    }));
+
+    setColumns(boardColumns);
+  } catch (err) {
+    console.error("Failed to load sprint board", err);
+    toast.error("Failed to load sprint board");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   const openUserModal = (issueId) => {
     setSelectedIssueId(issueId);
@@ -261,7 +308,33 @@ export default function JiraBoard() {
     <div className="p-6 bg-gray-100  mt-10 rounded-lg h-full flex flex-col">
       {/* ---------- HEADER ---------- */}
       <div className="flex justify-between gap-3 mb-6">
-        <h1 className="text-lg text-gray-400">Board</h1>
+        <div  className="flex justify-between gap-3 items-center">
+        <h1 className="text-lg text-gray-400">Board :</h1>
+
+          <select
+  value={selectedSprintId}
+  onChange={(e) => {
+    const sprintId = e.target.value;
+    setSelectedSprintId(sprintId);
+
+    if (sprintId) {
+      loadSprintBoard(sprintId);
+    }
+  }}
+  className="px-3 py-2 border rounded-lg cursor-pointer"
+>
+  <option value="">Select Sprint</option>
+
+  {sprints.map((sprint) => (
+    <option key={sprint.id} value={sprint.id}>
+      {sprint.name}
+    </option>
+  ))}
+</select>
+
+
+
+        </div>
         <div className="flex gap-5">
           <button
             onClick={() => setShowModal(true)}

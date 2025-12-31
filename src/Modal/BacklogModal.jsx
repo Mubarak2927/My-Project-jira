@@ -57,26 +57,25 @@ const BacklogModal = ({
       const allIssues = await getAllIssues(modalIssue.project_id);
 
       const parentDetails = links.map((link) => {
-  let parentId, parentType;
+        let parentId, parentType;
 
-  if (link.target_id === modalIssue.id) {
-    parentId = link.source_id;
-    parentType = mapType(link.source_type);  // fallback mapping
-  } else {
-    parentId = link.target_id;
-    parentType = mapType(link.target_type);  // fallback mapping
-  }
+        if (link.target_id === modalIssue.id) {
+          parentId = link.source_id;
+          parentType = mapType(link.source_type); // fallback mapping
+        } else {
+          parentId = link.target_id;
+          parentType = mapType(link.target_type); // fallback mapping
+        }
 
-  const parentIssue = allIssues.find((i) => i.id === parentId);
+        const parentIssue = allIssues.find((i) => i.id === parentId);
 
-  return {
-    id: link.id,
-    parent_id: parentId,
-    parent_type: parentType,             // safe
-    parent_name: parentIssue?.name || "Unknown",
-  };
-});
-
+        return {
+          id: link.id,
+          parent_id: parentId,
+          parent_type: parentType, // safe
+          parent_name: parentIssue?.name || "Unknown",
+        };
+      });
 
       setLinkedParents(parentDetails);
 
@@ -92,15 +91,21 @@ const BacklogModal = ({
     }
   };
   /* ================== HELPER – MAP TYPE ================== */
-const mapType = (type) => {
-  if (!type) return "task";
-  const t = type.toLowerCase();
-  const allowed = [
-    "project","epic","sprint","story","task","bug","subtask","feature"
-  ];
-  return allowed.includes(t) ? t : "task"; // fallback if "issue"
-};
-
+  const mapType = (type) => {
+    if (!type) return "task";
+    const t = type.toLowerCase();
+    const allowed = [
+      "project",
+      "epic",
+      "sprint",
+      "story",
+      "task",
+      "bug",
+      "subtask",
+      "feature",
+    ];
+    return allowed.includes(t) ? t : "task"; // fallback if "issue"
+  };
 
   /* ================= HANDLERS ================= */
   const handleUpdate = (field, value) => {
@@ -108,48 +113,43 @@ const mapType = (type) => {
   };
 
   const handleSaveIssue = async () => {
-  if (!window.confirm("Do you want to save changes?")) return;
+    if (!window.confirm("Do you want to save changes?")) return;
 
-  const payload = {
-    ...issueForm,
-    assignee_id: issueForm.assignee_id || null,
-    parent_ids: issueForm.parent_ids || [],
-    story_points:
-      issueForm.story_points !== null
-        ? Number(issueForm.story_points)
-        : null,
-    estimated_hours:
-      issueForm.estimated_hours !== null
-        ? Number(issueForm.estimated_hours)
-        : null,
+    const payload = {
+      ...issueForm,
+      assignee_id: issueForm.assignee_id || null,
+      parent_ids: issueForm.parent_ids || [],
+      story_points:
+        issueForm.story_points !== null ? Number(issueForm.story_points) : null,
+      estimated_hours:
+        issueForm.estimated_hours !== null
+          ? Number(issueForm.estimated_hours)
+          : null,
+    };
+
+    try {
+      await updateIssue(modalIssue.id, payload);
+      toast.success("Issue updated successfully");
+
+      setOriginalIssue(structuredClone(payload));
+
+      setModalIssue(null);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update issue");
+    }
   };
 
-  try {
-    await updateIssue(modalIssue.id, payload);
-    toast.success("Issue updated successfully");
+  const handleRestoreIssue = () => {
+    if (!originalIssue) return;
+    if (!window.confirm("Undo all changes?")) return;
 
-    // Update the snapshot after saving, so "Restore" works correctly
-    setOriginalIssue(structuredClone(payload));
+    const restored = structuredClone(originalIssue);
+    setIssueForm(restored);
+    setModalIssue((prev) => ({ ...prev, ...restored }));
 
-    // Optional: close modal automatically
-    // setModalIssue(null);
-
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to update issue");
-  }
-};
-
-const handleRestoreIssue = () => {
-  if (!originalIssue) return;
-  if (!window.confirm("Undo all changes?")) return;
-
-  const restored = structuredClone(originalIssue);
-  setIssueForm(restored);
-  setModalIssue((prev) => ({ ...prev, ...restored }));
-
-  toast("Changes restored", { icon: "↩️" });
-};
+    toast("Changes restored", { icon: "↩️" });
+  };
 
   const handleRemoveParentLink = async (linkId) => {
     if (!window.confirm("Remove this parent link?")) return;
@@ -206,7 +206,10 @@ const handleRestoreIssue = () => {
             >
               <SaveAll size={18} /> Save
             </button>
-            <button onClick={() => setModalIssue(null)} className="text-red-600">
+            <button
+              onClick={() => setModalIssue(null)}
+              className="text-red-600"
+            >
               <X size={25} />
             </button>
           </div>
@@ -223,9 +226,7 @@ const handleRestoreIssue = () => {
 
             <div className="flex gap-3 items-center mt-4">
               <span className="text-gray-500">Status :</span>
-              <span className="font-medium capitalize">
-                {issueForm.status}
-              </span>
+              <span className="font-medium capitalize">{issueForm.status}</span>
             </div>
 
             {/* COMMENTS */}
@@ -280,9 +281,7 @@ const handleRestoreIssue = () => {
               <select
                 className="w-full border rounded px-2 py-1 mt-1"
                 value={issueForm.priority}
-                onChange={(e) =>
-                  handleUpdate("priority", e.target.value)
-                }
+                onChange={(e) => handleUpdate("priority", e.target.value)}
               >
                 {["highest", "high", "medium", "low", "lowest"].map((p) => (
                   <option key={p} value={p}>
@@ -367,13 +366,9 @@ const handleRestoreIssue = () => {
                       key={link.id}
                       className="flex justify-between bg-gray-100 border rounded px-2 py-1"
                     >
-                      <span className="text-sm">
-                        {link.parent_name}
-                      </span>
+                      <span className="text-sm">{link.parent_name}</span>
                       <button
-                        onClick={() =>
-                          handleRemoveParentLink(link.id)
-                        }
+                        onClick={() => handleRemoveParentLink(link.id)}
                         className="text-red-500 text-xs"
                       >
                         Remove
