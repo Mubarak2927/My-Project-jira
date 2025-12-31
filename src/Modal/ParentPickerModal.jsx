@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
-import { createIssueLink, getAllIssues } from "../API/projectAPI";
+import { createIssueLink, getAllIssues, } from "../API/projectAPI";
 
 const ParentPickerModal = ({ issue, onClose, onLinked }) => {
   const [issues, setIssues] = useState([]);

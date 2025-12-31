@@ -39,36 +39,41 @@ const Backlog = ({
   setEditIssue,
   setEditForm,
 }) => {
-  /* ===================== STATE FOR FILTERS ===================== */
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [searchType, setSearchType] = useState("");
-  const [searchAssignee, setSearchAssignee] = useState("");
-  const [searchEpic, setSearchEpic] = useState("");
+ /* ===================== STATE FOR FILTERS ===================== */
+const [searchKeyword, setSearchKeyword] = useState("");
+const [searchType, setSearchType] = useState("");
+const [searchAssignee, setSearchAssignee] = useState("");
+const [searchEpic, setSearchEpic] = useState("");
+
+/* ===================== VIEW OPTIONS STATE ===================== */
+const [showViewOptions, setShowViewOptions] = useState(false);
+const [showHighestOnly, setShowHighestOnly] = useState(false);
+
 
   /* ===================== FILTERED ISSUES ===================== */
-  const filteredIssues = issues.filter((issue) => {
-    // 🔥 Sprint assign pannina task backlog la varakoodathu
-    if (issue.sprint_id) return false;
+const filteredIssues = issues.filter((issue) => {
+  if (issue.sprint_id) return false;
 
-    // 🔥 Epic filter (dropdown)
-    if (searchEpic && issue.epic_id !== searchEpic) return false;
+  // 🔥 VIEW OPTION FILTER
+  if (showHighestOnly && issue.priority !== "highest") return false;
 
-    // 🔥 Type filter (dropdown)
-    if (searchType && issue.type !== searchType) return false;
+  if (searchEpic && issue.epic_id !== searchEpic) return false;
 
-    // 🔥 Assigned user filter (dropdown)
-    if (searchAssignee && issue.assignee_id !== searchAssignee) return false;
+  if (searchType && issue.type !== searchType) return false;
 
-    // 🔥 Keyword filter (title, description)
-    if (searchKeyword) {
-      const keyword = searchKeyword.toLowerCase();
-      const inTitle = issue.name.toLowerCase().includes(keyword);
-      const inDesc = issue.description?.toLowerCase().includes(keyword);
-      if (!inTitle && !inDesc) return false;
-    }
+  if (searchAssignee && issue.assignee_id !== searchAssignee) return false;
 
-    return true;
-  });
+  if (searchKeyword) {
+    const keyword = searchKeyword.toLowerCase();
+    const inTitle = issue.name.toLowerCase().includes(keyword);
+    const inDesc = issue.description?.toLowerCase().includes(keyword);
+    if (!inTitle && !inDesc) return false;
+  }
+
+  return true;
+});
+
+
 
   const navigate = useNavigate();
 
@@ -89,6 +94,13 @@ const Backlog = ({
 
   const [showParentModal, setShowParentModal] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const [showFilters, setShowFilters] = useState(false);
+  const [showFilterBar, setShowFilterBar] = useState(false);
+
+
+
+
 
   const handleAddParent = (item) => {
     console.log("Parent added:", item);
@@ -205,7 +217,7 @@ const Backlog = ({
           onClick={() => toast("Coming Soon!")}
         >
           <FileUp size={16} className="text-green-600" />
-          <span>Upload File</span>
+          <span>Import File</span>
         </button>
 
         <button
@@ -217,19 +229,47 @@ const Backlog = ({
         </button>
 
         <button
-          onClick={() => toast("Coming Soon!")}
-          className=" text-blue-400 hover:bg-gray-300 h-fit px-2 py-2"
-          title="View Options"
-        >
-          <List />
-        </button>
+  onClick={() => setShowViewOptions(!showViewOptions)}
+  className="text-blue-400 hover:bg-gray-300 h-fit px-2 py-2 relative"
+  title="View Options"
+>
+  <List />
+</button>
+{showViewOptions && (
+  <div className="absolute right-10 top-66 bg-white rounded-lg shadow-lg p-3 z-50">
+    
+
+    {/* PRIORITY TOGGLE */}
+    <div className="flex items-center gap-5">
+      <span className="text-sm text-gray-700">
+       Highest Priority 
+      </span>
+
+      <button
+        onClick={() => setShowHighestOnly(!showHighestOnly)}
+        className={`w-10 h-5 flex items-center cursor-pointer rounded-full p-1 transition ${
+          showHighestOnly ? "bg-green-500" : "bg-gray-300"
+        }`}
+      >
+        <div
+          className={`bg-white w-4 h-4 rounded-full shadow transform transition ${
+            showHighestOnly ? "translate-x-5" : ""
+          }`}
+        />
+      </button>
+    </div>
+  </div>
+)}
+
         <button
-          onClick={() => toast("Coming Soon!")}
-          className="text-blue-400 hover:bg-gray-300 h-fit px-2 py-2"
-          title="List Filter"
-        >
-          <ListFilter />
-        </button>
+  onClick={() => setShowFilterBar(!showFilterBar)}
+  className="text-blue-400 hover:bg-gray-300 h-fit px-2 py-2 rounded"
+  title="List Filter"
+>
+  <ListFilter />
+</button>
+
+
         <button
           onClick={toggleFullscreen}
           className="text-blue-400 hover:bg-gray-300 cursor-pointer h-fit px-2 py-2 rounded"
@@ -242,43 +282,46 @@ const Backlog = ({
         <Toaster position="top-right" />
         {/* ================= HEADER SEARCH ================= */}
         <div className="items-center gap-2 flex">
-          <div className="w-full flex bg-gray-200 items-center gap-1 justify-between  rounded-sm p-1">
-            <div className="flex gap-2">
-              <ListFilter className="text-gray-500" size={16} />
-              <input
-                type="text"
-                placeholder="Filter by keyword..."
-                className="w-full  outline-none text-sm"
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-              />
-            </div>
-            <div className="text-gray-400 flex gap-3">
-              <select
-                value={searchType}
-                onChange={(e) => setSearchType(e.target.value)}
-              >
-                <option value="">All Types</option>
-                <option value="task">Task</option>
-                <option value="story">Story</option>
-                <option value="bug">Bug</option>
-                <option value="subtask">Subtask</option>
-              </select>
+         {showFilterBar && (
+  <div className="w-full flex bg-gray-200 items-center gap-1 justify-between rounded-sm p-1">
+    <div className="flex gap-2">
+      <ListFilter className="text-gray-500" size={16} />
+      <input
+        type="text"
+        placeholder="Filter by keyword..."
+        className="w-full outline-none text-sm"
+        value={searchKeyword}
+        onChange={(e) => setSearchKeyword(e.target.value)}
+      />
+    </div>
 
-              <select
-                value={searchAssignee}
-                onChange={(e) => setSearchAssignee(e.target.value)}
-              >
-                <option value="">Assignees</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.full_name}
-                  </option>
-                ))}
-              </select>
+    <div className="text-gray-400 flex gap-3">
+      <select
+        value={searchType}
+        onChange={(e) => setSearchType(e.target.value)}
+      >
+        <option value="">All Types</option>
+        <option value="task">Task</option>
+        <option value="story">Story</option>
+        <option value="bug">Bug</option>
+        <option value="subtask">Subtask</option>
+      </select>
 
-            </div>
-          </div>
+      <select
+        value={searchAssignee}
+        onChange={(e) => setSearchAssignee(e.target.value)}
+      >
+        <option value="">Assignees</option>
+        {users.map((u) => (
+          <option key={u.id} value={u.id}>
+            {u.full_name}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+)}
+
         </div>
         <div className="relative">
           {openWorkItem && (
@@ -370,10 +413,8 @@ const Backlog = ({
                   key={issue.id}
                   className="border-b hover:bg-gray-50 text-center transition"
                 >
-                  {/* SI NO */}
                   <td className="px-3 py-2">{index + 1}</td>
 
-                  {/* CHECKBOX */}
                   <td className="px-3 py-2">
                     <input
                       type="checkbox"
@@ -382,7 +423,6 @@ const Backlog = ({
                     />
                   </td>
 
-                  {/* TYPE */}
                   <td className="px-3 py-2 flex items-center gap-1">
                     {typeIcon[issue.type]}
                     <span className="capitalize">{issue.type}</span>

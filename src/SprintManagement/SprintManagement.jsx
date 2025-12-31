@@ -13,7 +13,7 @@ const SprintManagement = () => {
       <div className="flex gap-6 border-b mb-6">
         <Tab to="sprints" label="Sprints" />
         <Tab to="board" label="Board" />
-        <Tab to="list" label="Lists" />
+        <Tab to="list" label="Product Backlog Items" />
         <Tab to="completed" label="Completed Sprint" />
       </div>
 

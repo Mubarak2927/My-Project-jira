@@ -4,10 +4,10 @@ import { X, SaveAll, RotateCcw, Link2 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   updateIssue,
-  deleteLinkById,
   getLinksByIssueId,
   getAllIssues,
 } from "../API/projectAPI";
+import { deleteLinkById } from "../API/LinkedItems"
 import ParentPickerModal from "./ParentPickerModal";
 
 const BacklogModal = ({
@@ -104,7 +104,7 @@ const BacklogModal = ({
       "subtask",
       "feature",
     ];
-    return allowed.includes(t) ? t : "task"; // fallback if "issue"
+    return allowed.includes(t) ? t : "task"; 
   };
 
   /* ================= HANDLERS ================= */
@@ -113,32 +113,34 @@ const BacklogModal = ({
   };
 
   const handleSaveIssue = async () => {
-    if (!window.confirm("Do you want to save changes?")) return;
+  if (!window.confirm("Do you want to save changes?")) return;
 
-    const payload = {
-      ...issueForm,
-      assignee_id: issueForm.assignee_id || null,
-      parent_ids: issueForm.parent_ids || [],
-      story_points:
-        issueForm.story_points !== null ? Number(issueForm.story_points) : null,
-      estimated_hours:
-        issueForm.estimated_hours !== null
-          ? Number(issueForm.estimated_hours)
-          : null,
-    };
-
-    try {
-      await updateIssue(modalIssue.id, payload);
-      toast.success("Issue updated successfully");
-
-      setOriginalIssue(structuredClone(payload));
-
-      setModalIssue(null);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update issue");
-    }
+  const payload = {
+    ...issueForm,
+    assignee_id: issueForm.assignee_id || null,
+    parent_ids: issueForm.parent_ids || [],
+    story_points:
+      issueForm.story_points !== null ? Number(issueForm.story_points) : null,
+    estimated_hours:
+      issueForm.estimated_hours !== null
+        ? Number(issueForm.estimated_hours)
+        : null,
   };
+
+  try {
+    const updatedIssue = await updateIssue(modalIssue.id, payload); // 🔥 capture API response
+    toast.success(
+      `"${updatedIssue.type.charAt(0).toUpperCase() + updatedIssue.type.slice(1)}" updated successfully!`
+    );
+
+    setOriginalIssue(structuredClone(payload));
+    setModalIssue(null);
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to update issue");
+  }
+};
+
 
   const handleRestoreIssue = () => {
     if (!originalIssue) return;
@@ -155,7 +157,7 @@ const BacklogModal = ({
     if (!window.confirm("Remove this parent link?")) return;
 
     try {
-      await deleteLinkById(linkId);
+      await deleteLinkById (linkId);
       toast.success("Parent link removed");
       fetchLinkedParents();
     } catch (err) {

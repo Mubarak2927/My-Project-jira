@@ -132,12 +132,16 @@ const CommomLists = () => {
           <table className="w-full">
             <thead className="bg-gray-400 text-white">
               <tr>
+                 <th className="px-6 py-3 text-center text-xs font-medium uppercase">
+                  Select
+                </th>
                 <th className="px-6 py-3 text-center text-xs font-medium uppercase">
                   SI No
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium uppercase">
-                  Select
+                  Project key
                 </th>
+               
                 <th className="px-6 py-3 text-center text-xs font-medium uppercase">
                   Name
                 </th>
@@ -153,9 +157,6 @@ const CommomLists = () => {
             <tbody className="divide-y divide-gray-300">
               {currentItems.map((issue, index) => (
                 <tr key={issue.id}>
-                  <td className="px-6 py-3 text-sm text-center">
-                    {startIndex + index + 1}
-                  </td>
                   <td className="px-4 py-3 text-center">
                     <input
                       type="checkbox"
@@ -164,7 +165,17 @@ const CommomLists = () => {
                     />
                   </td>
                   <td className="px-6 py-3 text-sm text-center">
-                    {issue.name}
+                    {startIndex + index + 1}
+                  </td>
+                    <td className="px-6 py-3 text-sm text-center">
+    {issue.project_key || issue.project?.key || "-"}
+  </td>
+                  
+                  <td className="px-6 py-3 text-sm text-center">
+                    
+                    <p className="hover:underline cursor-pointer w-fit">{issue.name}</p>
+                  
+
                   </td>
                   <td className="px-6 py-3 text-sm text-center">
                     {issue.type}

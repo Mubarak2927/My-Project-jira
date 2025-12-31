@@ -15,8 +15,8 @@ const ProjectManagement = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false); // ✅ For Edit
-  const [selectedProject, setSelectedProject] = useState(null); // ✅ For edit modal
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null); 
 
   const navigate = useNavigate();
 
