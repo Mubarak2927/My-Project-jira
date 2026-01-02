@@ -3,6 +3,7 @@ import { getGlobalBacklog, getGlobalSprints } from "../API/projectAPI";
 import { ChevronsLeft, ChevronsRight } from "lucide-react";
 import { assignIssuesToGlobalSprint } from "../API/projectAPI";
 import toast from "react-hot-toast";
+import IssueDetailsModal from "../"
 
 const CommomLists = () => {
   const [issues, setIssues] = useState([]);
@@ -11,6 +12,8 @@ const CommomLists = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIssues, setSelectedIssues] = useState([]);
   const [selectedSprint, setSelectedSprint] = useState("");
+  const [openIssue, setOpenIssue] = useState(null);
+
   const [sprints, setSprints] = useState([]);
   const itemsPerPage = 10;
 
@@ -132,7 +135,7 @@ const CommomLists = () => {
           <table className="w-full">
             <thead className="bg-gray-400 text-white">
               <tr>
-                 <th className="px-6 py-3 text-center text-xs font-medium uppercase">
+                <th className="px-6 py-3 text-center text-xs font-medium uppercase">
                   Select
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium uppercase">
@@ -141,7 +144,7 @@ const CommomLists = () => {
                 <th className="px-6 py-3 text-center text-xs font-medium uppercase">
                   Project key
                 </th>
-               
+
                 <th className="px-6 py-3 text-center text-xs font-medium uppercase">
                   Name
                 </th>
@@ -167,16 +170,19 @@ const CommomLists = () => {
                   <td className="px-6 py-3 text-sm text-center">
                     {startIndex + index + 1}
                   </td>
-                    <td className="px-6 py-3 text-sm text-center">
-    {issue.project_key || issue.project?.key || "-"}
-  </td>
-                  
                   <td className="px-6 py-3 text-sm text-center">
-                    
-                    <p className="hover:underline cursor-pointer w-fit">{issue.name}</p>
-                  
-
+                    {issue.project_key || issue.project?.key || "-"}
                   </td>
+
+                  <td className="px-6 py-3 text-sm text-center">
+                    <p
+                      className="hover:underline cursor-pointer text-blue-600"
+                      onClick={() => setOpenIssue(issue)}
+                    >
+                      {issue.name}
+                    </p>
+                  </td>
+
                   <td className="px-6 py-3 text-sm text-center">
                     {issue.type}
                   </td>
@@ -189,6 +195,14 @@ const CommomLists = () => {
           </table>
         </div>
       )}
+
+      {openIssue && (
+        <IssueDetailsModal
+          issue={openIssue}
+          onClose={() => setOpenIssue(null)}
+        />
+      )}
+
 
       <div className="flex items-center justify-end gap-2 mt-4">
         <select
