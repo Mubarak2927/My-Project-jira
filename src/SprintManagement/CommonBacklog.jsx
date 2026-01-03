@@ -248,7 +248,7 @@ const CommonBacklog = () => {
                                     </td>
 
                                     <td className="px-6 py-3 text-sm text-center">
-                                        {issue.type}
+                                        {issue.assignee_id || "-" }
                                     </td>
                                     <td className="px-6 py-3 text-sm text-center">
                                         {issue.type}

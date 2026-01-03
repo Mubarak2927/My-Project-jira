@@ -184,15 +184,12 @@ const BacklogModal = ({
             <p className="text-lg font-semibold text-orange-600">
               {modalIssue.type?.toUpperCase()}
             </p>
-
-
-
             {!isEditingTitle ? (
               <h2
                 className="text-2xl font-semibold cursor-pointer hover:text-blue-600 transition"
                 onClick={() => setIsEditingTitle(true)}
               >
-                <span className="mr-10 text-base">Key:  {modalIssue.key}</span>  Name: {issueForm.name}
+                <span className="mr-10 text-base bg-amber-200 p-2 rounded"> {modalIssue.key}</span>{issueForm.name}
               </h2>
             ) : (
               <input
@@ -232,17 +229,37 @@ const BacklogModal = ({
           {/* ================= LEFT ================= */}
           <div className="col-span-2 space-y-4">
 
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setShowTagModal(true)}
-                className="flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full shadow-sm hover:bg-blue-100 transition"
-              >
-                <Plus size={14} /> Add Tags
-              </button>
+            <div className="flex gap-3 justify-between">
+              <div className="flex gap-3 items-center">
+                <button
+                  onClick={() => setShowTagModal(true)}
+                  className="flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full shadow-sm hover:bg-blue-100 transition"
+                >
+                  <Plus size={14} /> Add Tags
+                </button>
 
-              <p className="text-sm text-gray-500">
-                Iteration : <span className="font-medium">—</span>
-              </p>
+                <p className="text-sm text-gray-500">
+                  Iteration : <span className="font-medium">—</span>
+                </p>
+              </div>
+              <div className="flex flex-row items-center gap-3">
+                <p>Assignee:</p>
+                <select
+                  className="w-full px-3 py-1 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none mt-1"
+                  value={issueForm.assignee_id || ""}
+                  onChange={(e) =>
+                    handleUpdate(
+                      "assignee_id",
+                      e.target.value === "" ? null : e.target.value
+                    )
+                  }
+                >
+                  <option value="">Unassigned</option>
+                  {users?.map((u) => (
+                    <option key={u.id} value={u.id}>{u.full_name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {showTagModal && (
@@ -392,24 +409,7 @@ const BacklogModal = ({
             </div>
 
             {/* ASSIGNEE */}
-            <div>
-              <label className="text-xs">Assignee</label>
-              <select
-                className="w-full px-3 py-2 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none mt-1"
-                value={issueForm.assignee_id || ""}
-                onChange={(e) =>
-                  handleUpdate(
-                    "assignee_id",
-                    e.target.value === "" ? null : e.target.value
-                  )
-                }
-              >
-                <option value="">Unassigned</option>
-                {users?.map((u) => (
-                  <option key={u.id} value={u.id}>{u.full_name}</option>
-                ))}
-              </select>
-            </div>
+
 
             {/* ESTIMATED HOURS */}
             <div>
