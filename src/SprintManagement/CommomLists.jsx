@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { getGlobalBacklog, getGlobalSprints } from "../API/projectAPI";
+import {
+  getGlobalBacklog,
+  getGlobalSprints,
+  assignIssuesToGlobalSprint,
+  getIssueComments,
+  IssueComments,
+  getAllUsers,
+} from "../API/projectAPI";
 import { ChevronsLeft, ChevronsRight } from "lucide-react";
-import { assignIssuesToGlobalSprint } from "../API/projectAPI";
 import toast from "react-hot-toast";
-import IssueDetailsModal from "../"
+import BacklogModal from "../Modal/BacklogModal"; // ✅ modal import
 
 const CommomLists = () => {
   const [issues, setIssues] = useState([]);
@@ -12,9 +18,14 @@ const CommomLists = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIssues, setSelectedIssues] = useState([]);
   const [selectedSprint, setSelectedSprint] = useState("");
-  const [openIssue, setOpenIssue] = useState(null);
-
   const [sprints, setSprints] = useState([]);
+  const [users, setUsers] = useState([])
+
+  /* 🔥 MODAL RELATED STATES */
+  const [modalIssue, setModalIssue] = useState(null);
+  const [issueComments, setIssueComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -110,7 +121,50 @@ const CommomLists = () => {
     }
   };
 
-  if (loading) return <div className="text-balck">Loading Lists...</div>;
+
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const data = await getAllUsers(); // API call
+        setUsers(data); // store array of users
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to fetch users");
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  /* 🔥 NAME CLICK → MODAL OPEN */
+  const openIssueModal = async (issue) => {
+    setModalIssue(issue);
+    try {
+      const res = await getIssueComments(issue.id);
+      setIssueComments(res || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  /* 🔥 ADD COMMENT (REUSED IN MODAL) */
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !modalIssue) return;
+
+    try {
+      await IssueComments(modalIssue.id, newComment);
+      setNewComment("");
+      const res = await getIssueComments(modalIssue.id);
+      setIssueComments(res || []);
+      toast.success("Comment added");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to add comment");
+    }
+  };
+
+  if (loading) return <div className="text-black">Loading Lists...</div>;
 
   return (
     <div className="">
@@ -176,8 +230,8 @@ const CommomLists = () => {
 
                   <td className="px-6 py-3 text-sm text-center">
                     <p
-                      className="hover:underline cursor-pointer text-blue-600"
-                      onClick={() => setOpenIssue(issue)}
+                      className="hover:underline cursor-pointer w-fit"
+                      onClick={() => openIssueModal(issue)}
                     >
                       {issue.name}
                     </p>
@@ -196,13 +250,18 @@ const CommomLists = () => {
         </div>
       )}
 
-      {openIssue && (
-        <IssueDetailsModal
-          issue={openIssue}
-          onClose={() => setOpenIssue(null)}
+      {/* MODAL */}
+      {modalIssue && (
+        <BacklogModal
+          modalIssue={modalIssue}
+          setModalIssue={setModalIssue}
+          issueComments={issueComments}
+          newComment={newComment}
+          setNewComment={setNewComment}
+          users={users}
+          handleAddComment={handleAddComment}
         />
       )}
-
 
       <div className="flex items-center justify-end gap-2 mt-4">
         <select

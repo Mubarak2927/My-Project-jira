@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {CheckSquare,BookOpen,Bug,Plus,Dot,Trash2,SquarePen,Eye,X,Crown,Layers,User,List,ListFilter,Fullscreen,FileUp,Search,BookmarkCheck,Maximize2,Minimize2,Undo,SaveAll,RotateCcw,} from "lucide-react";
+import { CheckSquare, BookOpen, Bug, Plus, Dot, Trash2, SquarePen, Eye, X, Crown, Layers, User, List, ListFilter, Fullscreen, FileUp, Search, BookmarkCheck, Maximize2, Minimize2, Undo, SaveAll, RotateCcw, } from "lucide-react";
 import { useNavigate, useOutletContext } from "react-router";
 import toast, { Toaster } from "react-hot-toast";
 import {
@@ -39,39 +39,39 @@ const Backlog = ({
   setEditIssue,
   setEditForm,
 }) => {
- /* ===================== STATE FOR FILTERS ===================== */
-const [searchKeyword, setSearchKeyword] = useState("");
-const [searchType, setSearchType] = useState("");
-const [searchAssignee, setSearchAssignee] = useState("");
-const [searchEpic, setSearchEpic] = useState("");
+  /* ===================== STATE FOR FILTERS ===================== */
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchType, setSearchType] = useState("");
+  const [searchAssignee, setSearchAssignee] = useState("");
+  const [searchEpic, setSearchEpic] = useState("");
 
-/* ===================== VIEW OPTIONS STATE ===================== */
-const [showViewOptions, setShowViewOptions] = useState(false);
-const [showHighestOnly, setShowHighestOnly] = useState(false);
+  /* ===================== VIEW OPTIONS STATE ===================== */
+  const [showViewOptions, setShowViewOptions] = useState(false);
+  const [showHighestOnly, setShowHighestOnly] = useState(false);
 
 
   /* ===================== FILTERED ISSUES ===================== */
-const filteredIssues = issues.filter((issue) => {
-  if (issue.sprint_id) return false;
+  const filteredIssues = issues.filter((issue) => {
+    if (issue.sprint_id) return false;
 
-  // 🔥 VIEW OPTION FILTER
-  if (showHighestOnly && issue.priority !== "highest") return false;
+    // 🔥 VIEW OPTION FILTER
+    if (showHighestOnly && issue.priority !== "highest") return false;
 
-  if (searchEpic && issue.epic_id !== searchEpic) return false;
+    if (searchEpic && issue.epic_id !== searchEpic) return false;
 
-  if (searchType && issue.type !== searchType) return false;
+    if (searchType && issue.type !== searchType) return false;
 
-  if (searchAssignee && issue.assignee_id !== searchAssignee) return false;
+    if (searchAssignee && issue.assignee_id !== searchAssignee) return false;
 
-  if (searchKeyword) {
-    const keyword = searchKeyword.toLowerCase();
-    const inTitle = issue.name.toLowerCase().includes(keyword);
-    const inDesc = issue.description?.toLowerCase().includes(keyword);
-    if (!inTitle && !inDesc) return false;
-  }
+    if (searchKeyword) {
+      const keyword = searchKeyword.toLowerCase();
+      const inTitle = issue.name.toLowerCase().includes(keyword);
+      const inDesc = issue.description?.toLowerCase().includes(keyword);
+      if (!inTitle && !inDesc) return false;
+    }
 
-  return true;
-});
+    return true;
+  });
 
 
 
@@ -97,8 +97,6 @@ const filteredIssues = issues.filter((issue) => {
 
   const [showFilters, setShowFilters] = useState(false);
   const [showFilterBar, setShowFilterBar] = useState(false);
-
-
 
 
 
@@ -130,18 +128,26 @@ const filteredIssues = issues.filter((issue) => {
   }, [project]);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const data = await getAllUsers(); // API call
-        setUsers(data); // store array of users
-      } catch (err) {
-        console.error(err);
-        toast.error("Failed to fetch users");
-      }
-    };
-
-    fetchUsers();
+    fetchUsers()
   }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await getAllUsers();
+      // check if response is the array or response.data is the array
+      const userData = response.data || response;
+
+      if (Array.isArray(userData)) {
+        setUsers(userData);
+      } else {
+        console.error("Data is not an array:", userData);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch users");
+    }
+  };
+
 
   /* ===================== PRIORITY COLORS ===================== */
   const priorityColors = {
@@ -229,45 +235,43 @@ const filteredIssues = issues.filter((issue) => {
         </button>
 
         <button
-  onClick={() => setShowViewOptions(!showViewOptions)}
-  className="text-blue-400 hover:bg-gray-300 h-fit px-2 py-2 relative"
-  title="View Options"
->
-  <List />
-</button>
-{showViewOptions && (
-  <div className="absolute right-10 top-66 bg-white rounded-lg shadow-lg p-3 z-50">
-    
+          onClick={() => setShowViewOptions(!showViewOptions)}
+          className="text-blue-400 hover:bg-gray-300 h-fit px-2 py-2 relative"
+          title="View Options"
+        >
+          <List />
+        </button>
+        {showViewOptions && (
+          <div className="absolute right-10 top-66 bg-white rounded-lg shadow-lg p-3 z-50">
 
-    {/* PRIORITY TOGGLE */}
-    <div className="flex items-center gap-5">
-      <span className="text-sm text-gray-700">
-       Highest Priority 
-      </span>
 
-      <button
-        onClick={() => setShowHighestOnly(!showHighestOnly)}
-        className={`w-10 h-5 flex items-center cursor-pointer rounded-full p-1 transition ${
-          showHighestOnly ? "bg-green-500" : "bg-gray-300"
-        }`}
-      >
-        <div
-          className={`bg-white w-4 h-4 rounded-full shadow transform transition ${
-            showHighestOnly ? "translate-x-5" : ""
-          }`}
-        />
-      </button>
-    </div>
-  </div>
-)}
+            {/* PRIORITY TOGGLE */}
+            <div className="flex items-center gap-5">
+              <span className="text-sm text-gray-700">
+                Highest Priority
+              </span>
+
+              <button
+                onClick={() => setShowHighestOnly(!showHighestOnly)}
+                className={`w-10 h-5 flex items-center cursor-pointer rounded-full p-1 transition ${showHighestOnly ? "bg-green-500" : "bg-gray-300"
+                  }`}
+              >
+                <div
+                  className={`bg-white w-4 h-4 rounded-full shadow transform transition ${showHighestOnly ? "translate-x-5" : ""
+                    }`}
+                />
+              </button>
+            </div>
+          </div>
+        )}
 
         <button
-  onClick={() => setShowFilterBar(!showFilterBar)}
-  className="text-blue-400 hover:bg-gray-300 h-fit px-2 py-2 rounded"
-  title="List Filter"
->
-  <ListFilter />
-</button>
+          onClick={() => setShowFilterBar(!showFilterBar)}
+          className="text-blue-400 hover:bg-gray-300 h-fit px-2 py-2 rounded"
+          title="List Filter"
+        >
+          <ListFilter />
+        </button>
 
 
         <button
@@ -282,45 +286,45 @@ const filteredIssues = issues.filter((issue) => {
         <Toaster position="top-right" />
         {/* ================= HEADER SEARCH ================= */}
         <div className="items-center gap-2 flex">
-         {showFilterBar && (
-  <div className="w-full flex bg-gray-200 items-center gap-1 justify-between rounded-sm p-1">
-    <div className="flex gap-2">
-      <ListFilter className="text-gray-500" size={16} />
-      <input
-        type="text"
-        placeholder="Filter by keyword..."
-        className="w-full outline-none text-sm"
-        value={searchKeyword}
-        onChange={(e) => setSearchKeyword(e.target.value)}
-      />
-    </div>
+          {showFilterBar && (
+            <div className="w-full flex bg-gray-200 items-center gap-1 justify-between rounded-sm p-1">
+              <div className="flex gap-2">
+                <ListFilter className="text-gray-500" size={16} />
+                <input
+                  type="text"
+                  placeholder="Filter by keyword..."
+                  className="w-full outline-none text-sm"
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
+                />
+              </div>
 
-    <div className="text-gray-400 flex gap-3">
-      <select
-        value={searchType}
-        onChange={(e) => setSearchType(e.target.value)}
-      >
-        <option value="">All Types</option>
-        <option value="task">Task</option>
-        <option value="story">Story</option>
-        <option value="bug">Bug</option>
-        <option value="subtask">Subtask</option>
-      </select>
+              <div className="text-gray-400 flex gap-3">
+                <select
+                  value={searchType}
+                  onChange={(e) => setSearchType(e.target.value)}
+                >
+                  <option value="">All Types</option>
+                  <option value="task">Task</option>
+                  <option value="story">Story</option>
+                  <option value="bug">Bug</option>
+                  <option value="subtask">Subtask</option>
+                </select>
 
-      <select
-        value={searchAssignee}
-        onChange={(e) => setSearchAssignee(e.target.value)}
-      >
-        <option value="">Assignees</option>
-        {users.map((u) => (
-          <option key={u.id} value={u.id}>
-            {u.full_name}
-          </option>
-        ))}
-      </select>
-    </div>
-  </div>
-)}
+                <select
+                  value={searchAssignee}
+                  onChange={(e) => setSearchAssignee(e.target.value)}
+                >
+                  <option value="">Assignees</option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.full_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
 
         </div>
         <div className="relative">
@@ -383,11 +387,10 @@ const filteredIssues = issues.filter((issue) => {
             onClick={handleBulkDelete}
             disabled={selectedIssues.length === 0}
             className={`flex p-2 items-center gap-2 shadow-sm/50 rounded 
-    ${
-      selectedIssues.length === 0
-        ? "text-gray-400 cursor-not-allowed"
-        : "text-red-600 hover:bg-gray-200 hover:scale-105 cursor-pointer"
-    }`}
+    ${selectedIssues.length === 0
+                ? "text-gray-400 cursor-not-allowed"
+                : "text-red-600 hover:bg-gray-200 hover:scale-105 cursor-pointer"
+              }`}
           >
             <Trash2 size={15} />
           </button>
@@ -487,11 +490,10 @@ const filteredIssues = issues.filter((issue) => {
           <button
             onClick={handleAssignSprint}
             disabled={!form.sprintId || selectedIssues.length === 0}
-            className={`border px-4 py-2 rounded text-white ${
-              !form.sprintId || selectedIssues.length === 0
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-500"
-            }`}
+            className={`border px-4 py-2 rounded text-white ${!form.sprintId || selectedIssues.length === 0
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-500"
+              }`}
           >
             Assign Sprint
           </button>

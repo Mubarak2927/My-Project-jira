@@ -36,6 +36,7 @@ import CommonSprints from "./SprintManagement/CommonSprints";
 import CommomLists from "./SprintManagement/CommomLists";
 import CommonBoard from "./SprintManagement/CommonBoard";
 import CommonCompleteSprint from "./SprintManagement/CommonCompleteSprint";
+import CommonBacklog from "./SprintManagement/CommonBacklog";
 
 const App = () => {
   return (
@@ -69,6 +70,7 @@ const App = () => {
             <Route index element={<Navigate to="sprints" replace />} />
             <Route path="sprints" element={<CommonSprints />} />
             <Route path="board" element={<CommonBoard />} />
+            <Route path="backlog" element={<CommonBacklog />} />
             <Route path="list" element={<CommomLists />} />
             <Route path="completed" element={<CommonCompleteSprint />} />
           </Route>
