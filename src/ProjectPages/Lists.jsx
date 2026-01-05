@@ -60,14 +60,14 @@ const filteredTasks = showDoneOnly
 
   {/* Options Dropdown */}
   {showOptions && (
-    <div className="absolute right-0 mt-2 w-48 bg-white  rounded shadow-lg p-3 z-20">
-      <div className="flex items-center justify-between">
+    <div className="absolute right-0 -mt-5 w-fit bg-white  rounded shadow-lg p-3 z-20">
+      <div className="flex items-center gap-3">
         <span className="text-sm font-medium">Done</span>
 
         {/* Toggle */}
         <button
           onClick={() => setShowDoneOnly((prev) => !prev)}
-          className={`w-10 h-5 flex items-center rounded-full p-1 transition ${
+          className={`w-10 h-5 flex items-center cursor-pointer rounded-full p-1 transition ${
             showDoneOnly ? "bg-green-500" : "bg-gray-300"
           }`}
         >
@@ -121,7 +121,13 @@ const filteredTasks = showDoneOnly
                   <td className="px-3 py-2 border-b">
                     <p
                       className="hover:underline cursor-pointer font-medium"
-                      onClick={() => setSelectedTask(task)}
+                      onClick={() =>
+  setSelectedTask({
+    ...task,
+    serialNo: index + 1,
+  })
+}
+
                     >
                       {task.name}
                     </p>
@@ -151,12 +157,15 @@ const filteredTasks = showDoneOnly
     <div className="bg-white w-[65vw] h-[50vh] rounded-lg shadow-lg relative flex flex-col">
       
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b">
+      <div className="flex items-center justify-between px-6 py-4">
         <div className=" truncate">
           <p className="capitalize">
           {selectedTask.type}
 
           </p>
+          <p className="text-gray-500 text-sm">
+  ID : {selectedTask.serialNo}
+</p>
           <p>
           {selectedTask.name}
 

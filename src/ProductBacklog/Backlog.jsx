@@ -52,26 +52,29 @@ const Backlog = ({
 
   /* ===================== FILTERED ISSUES ===================== */
   const filteredIssues = issues.filter((issue) => {
-    if (issue.sprint_id) return false;
+  // 🔥 TASK ONLY
+  if (issue.type !== "task" ) return false;
 
-    // 🔥 VIEW OPTION FILTER
-    if (showHighestOnly && issue.priority !== "highest") return false;
+  if (issue.sprint_id) return false;
 
-    if (searchEpic && issue.epic_id !== searchEpic) return false;
+  if (showHighestOnly && issue.priority !== "highest") return false;
 
-    if (searchType && issue.type !== searchType) return false;
+  if (searchEpic && issue.epic_id !== searchEpic) return false;
 
-    if (searchAssignee && issue.assignee_id !== searchAssignee) return false;
+  if (searchType && issue.type !== searchType) return false;
 
-    if (searchKeyword) {
-      const keyword = searchKeyword.toLowerCase();
-      const inTitle = issue.name.toLowerCase().includes(keyword);
-      const inDesc = issue.description?.toLowerCase().includes(keyword);
-      if (!inTitle && !inDesc) return false;
-    }
+  if (searchAssignee && issue.assignee_id !== searchAssignee) return false;
 
-    return true;
-  });
+  if (searchKeyword) {
+    const keyword = searchKeyword.toLowerCase();
+    const inTitle = issue.name.toLowerCase().includes(keyword);
+    const inDesc = issue.description?.toLowerCase().includes(keyword);
+    if (!inTitle && !inDesc) return false;
+  }
+
+  return true;
+});
+
 
 
 
@@ -434,7 +437,7 @@ const Backlog = ({
                   {/* TITLE */}
                   <td className="px-3 py-2 text-center font-medium">
                     <p
-                      onClick={() => openIssueModal(issue)}
+                      onClick={() => openIssueModal({ ...issue, serialNo: index + 1 })}
                       className=" hover:underline cursor-pointer w-fit"
                     >
                       {issue.name}

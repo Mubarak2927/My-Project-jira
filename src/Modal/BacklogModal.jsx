@@ -184,12 +184,15 @@ const BacklogModal = ({
             <p className="text-lg font-semibold text-orange-600">
               {modalIssue.type?.toUpperCase()}
             </p>
+              <p className="mr-4 text-gray-400">
+    ID :{modalIssue.serialNo}
+  </p>
             {!isEditingTitle ? (
               <h2
                 className="text-2xl font-semibold cursor-pointer hover:text-blue-600 transition"
                 onClick={() => setIsEditingTitle(true)}
               >
-                <span className="mr-10 text-base bg-amber-200 p-2 rounded"> {modalIssue.key}</span>{issueForm.name}
+                <span className="mr-10"> {modalIssue.key}</span>{issueForm.name}
               </h2>
             ) : (
               <input
@@ -352,7 +355,7 @@ const BacklogModal = ({
             <div className="flex justify-between mt-4">
               <h3 className="font-semibold">Comments</h3>
               <p className="text-gray-400 text-sm">
-                Total : <span className="text-blue-600">{issueComments?.length || 0}</span>
+                Total Comments : <span className="text-blue-600">{issueComments?.length || 0}</span>
               </p>
             </div>
 
