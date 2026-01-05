@@ -417,7 +417,7 @@ export const getListByKey = async (project_key) => {
 
 
 export const postTags = async (issuesId, payload) => {
-  const res = await API.post(`/issues/${issuesId}/assign`, payload);
+  const res = await API.patch(`/issues/${issuesId}/assign`, payload);
   return res.data;
 };
 
