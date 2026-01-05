@@ -240,11 +240,29 @@ const BacklogModal = ({
                 >
                   <Plus size={14} /> Add Tags
                 </button>
+                 {/* TAGS */}
+            {modalIssue.tags && (
+  <div className="flex gap-2 flex-wrap">
+    {(Array.isArray(modalIssue.tags) ? modalIssue.tags : [modalIssue.tags]).map((t) => (
+      <span
+        key={t}
+        className="flex items-center gap-1 bg-white shadow-sm text-gray-700 px-3 py-1 rounded-full text-xs"
+      >
+        {t}
+        <button
+          className="text-red-500 hover:text-red-700"
+        >
+          ✕
+        </button>
+      </span>
+    ))}
+  </div>
+)}
 
-                <p className="text-sm text-gray-500">
-                  Iteration : <span className="font-medium">—</span>
-                </p>
+
+                
               </div>
+             
               <div className="flex flex-row items-center gap-3">
                 <p>Assignee:</p>
                 <select
@@ -316,6 +334,9 @@ const BacklogModal = ({
               </div>)}
 
             {/* DESCRIPTION */}
+             <p className="text-sm text-gray-500">
+                  Iteration : <span className="font-medium">—</span>
+                </p>
             <div>
               <h3 className="font-semibold mb-2">Description</h3>
               <p className="bg-white p-4 rounded shadow-md text-gray-700">
@@ -323,25 +344,7 @@ const BacklogModal = ({
               </p>
             </div>
 
-            {/* TAGS */}
-            {modalIssue.tags && (
-              <div className="flex gap-2 flex-wrap">
-                {Array.isArray(modalIssue.tags)
-                  ? modalIssue.tags.map((t) => (
-                    <span
-                      key={t}
-                      className="bg-white shadow-sm text-gray-700 px-3 py-1 rounded-full text-xs"
-                    >
-                      {t}
-                    </span>
-                  ))
-                  : (
-                    <span className="bg-white shadow-sm text-gray-700 px-3 py-1 rounded-full text-xs">
-                      {modalIssue.tags}
-                    </span>
-                  )}
-              </div>
-            )}
+           
 
             {/* STATUS */}
             <div className="flex gap-2 items-center">

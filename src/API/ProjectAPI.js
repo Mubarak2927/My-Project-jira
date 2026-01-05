@@ -292,6 +292,12 @@ export const getCompleteSprints = async (projectId) => {
   const res = await API.get(`/sprints/completed?project_id=${projectId}`);
   return res.data;
 };
+export const getSingleIssues = async (issueID) => {
+  const res = await API.get(`/issues/${issueID}`);
+  return res.data;
+};
+
+
 
 export const deleteIssues = async (issueID) => {
   const res = await API.delete(`/issues/${issueID}`);

@@ -310,7 +310,7 @@ const handleSave = async () => {
                     }))
                   }
                 >
-                  <option value="">Select</option>
+                  <option value="" disabled>Select</option>
                   <option value="highest">Highest</option>
                   <option value="high">High</option>
                   <option value="medium">Medium</option>

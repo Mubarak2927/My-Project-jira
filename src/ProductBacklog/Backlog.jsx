@@ -10,6 +10,7 @@ import {
   IssueComments,
   sprintTaskMove,
   updateIssue,
+  getSingleIssues,
 } from "../API/ProjectAPI";
 import BacklogModal from "../Modal/BacklogModal";
 
@@ -101,6 +102,8 @@ const Backlog = ({
   const [showFilters, setShowFilters] = useState(false);
   const [showFilterBar, setShowFilterBar] = useState(false);
 
+  // const [modalIssue, setModalIssue] = useState(null);
+
 
 
   const handleAddParent = (item) => {
@@ -150,6 +153,15 @@ const Backlog = ({
       toast.error("Failed to fetch users");
     }
   };
+  const openIssueSingleModal = async (issueId) => {
+  try {
+    const issue = await getSingleIssues(issueId); // 🔥 ONLY ONE API CALL
+    setModalIssue(issue);
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to load issue");
+  }
+};
 
 
   /* ===================== PRIORITY COLORS ===================== */
@@ -436,12 +448,13 @@ const Backlog = ({
 
                   {/* TITLE */}
                   <td className="px-3 py-2 text-center font-medium">
-                    <p
-                      onClick={() => openIssueModal({ ...issue, serialNo: index + 1 })}
-                      className=" hover:underline cursor-pointer w-fit"
-                    >
-                      {issue.name}
-                    </p>
+                   <p
+  onClick={() => openIssueSingleModal(issue.id)}
+  className="hover:underline cursor-pointer w-fit"
+>
+  {issue.name}
+</p>
+
                     {issue.type === "story" && issue.story_points && (
                       <span className="ml-2 text-xs text-green-600">
                         (Story_Points : {issue.story_points})
