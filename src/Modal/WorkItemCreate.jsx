@@ -20,6 +20,7 @@ import {
   IssueComments,
   getIssueComments,
   getAllUsers,
+  createsFeature,
 } from "../API/projectAPI";
 import toast from "react-hot-toast";
 
@@ -136,52 +137,60 @@ const WorkItemCreate = () => {
 
   /* ================= SUBMIT ================= */
   // WorkItemCreate.jsx
-  const handleSave = async () => {
-    try {
-      if (!form.name.trim()) {
-        toast.error("Title required");
-        return;
-      }
-
-      if (type === "epic") {
-        await createEpic({
-          name: form.name,
-          description: form.description,
-          project_id: project.id,
-          end_date: form.end_date || null,
-          key: form.key || undefined, // optional
-        });
-      } else {
-        await createIssues({
-          name: form.name,
-          description: form.description,
-          epic_id: form.epic_id || null,
-          priority: form.priority || null,
-          assignee_id: form.assignee || null,
-          type,
-          story_points: type === "story" ? form.story_points : null,
-          project_id: project.id,
-          sprint_id: form.sprint_id || null,
-          parent_id: form.parent_id || null,
-          estimated_hours: form.estimated_hours || null,
-          feature_id: form.feature_id || null,
-          location: form.location,
-          tags: form.tags,
-          comments, // already handled
-        });
-
-        toast.success(`${type} Created`);
-      }
-
-      // 🔥 IMPORTANT
-      navigate(-1, {
-        state: { refreshBacklog: true },
-      });
-    } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong");
+const handleSave = async () => {
+  try {
+    if (!form.name.trim()) {
+      toast.error("Title required");
+      return;
     }
-  };
+
+    if (type === "epic") {
+      await createEpic({
+        name: form.name,
+        description: form.description,
+        project_id: project.id,
+      });
+
+    } else if (type === "feature") {
+      await createsFeature({
+        name: form.name,
+        description: form.description,
+        project_id: project.id,
+        priority: form.priority || null,
+        assignee_id: form.assignee || null,
+      });
+
+      toast.success("Feature Created");
+
+    } else {
+      await createIssues({
+        name: form.name,
+        description: form.description,
+        epic_id: form.epic_id || null,
+        priority: form.priority || null,
+        assignee_id: form.assignee || null,
+        type,
+        story_points: type === "story" ? form.story_points : null,
+        project_id: project.id,
+        sprint_id: form.sprint_id || null,
+        parent_id: form.parent_id || null,
+        estimated_hours: form.estimated_hours || null,
+        feature_id: form.feature_id || null,
+        location: form.location,
+        tags: form.tags,
+        comments,
+      });
+
+      toast.success(`${type} Created`);
+    }
+
+    navigate(-1, { state: { refreshBacklog: true } });
+  } catch (err) {
+    console.error(err);
+    toast.error("Something went wrong");
+  }
+};
+
   const handleRestoreIssue = () => {
     if (!window.confirm("Undo all changes?")) return;
 

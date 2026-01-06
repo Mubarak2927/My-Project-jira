@@ -1,6 +1,15 @@
 // BacklogModal.jsx
 import React, { useEffect, useState } from "react";
-import { X, SaveAll, RotateCcw, Link2, Plus, Undo2, Paperclip } from "lucide-react";
+import {
+  X,
+  SaveAll,
+  RotateCcw,
+  Link2,
+  Plus,
+  Undo2,
+  Paperclip,
+  Trash2,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import {
   updateIssue,
@@ -8,6 +17,8 @@ import {
   getAllIssues,
   postTags,
   getSprint,
+  deleteComments,
+  getSingleIssues,
 } from "../API/projectAPI";
 import { deleteLinkById } from "../API/LinkedItems";
 import ParentPickerModal from "./ParentPickerModal";
@@ -32,6 +43,7 @@ const BacklogModal = ({
   const [tagInput, setTagInput] = useState("");
 
   const [sprints, setSprints] = useState([]);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
 
   /* ================= INIT ================= */
   useEffect(() => {
@@ -39,6 +51,7 @@ const BacklogModal = ({
 
     const snapshot = {
       name: modalIssue.name || "",
+      description: modalIssue.description || "",
       priority: modalIssue.priority || "",
       start_date: modalIssue.start_date || "",
       target_date: modalIssue.target_date || "",
@@ -148,6 +161,9 @@ const BacklogModal = ({
           ? Number(issueForm.estimated_hours)
           : null,
     };
+    if (!issueForm.sprint_id) {
+      delete payload.sprint_id; // 🚀 backend ku field-eh pogathu
+    }
 
     try {
       const updatedIssue = await updateIssue(modalIssue.id, payload); // 🔥 capture API response
@@ -218,6 +234,26 @@ const BacklogModal = ({
     }
   };
 
+  
+
+const handleDeleteComment = async (commentId) => {
+  if (!window.confirm("Delete this comment?")) return;
+
+  try {
+    await deleteComments(commentId);
+    toast.success("Comment deleted");
+
+    // 🔥 UI update – parent state la irundhu remove pannum
+    setModalIssue((prev) => ({
+      ...prev,
+      comments: prev.comments?.filter((c) => c.id !== commentId),
+    }));
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to delete comment");
+  }
+};
+
   const storyPointsOptions = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
 
   if (!modalIssue) return null;
@@ -238,7 +274,6 @@ const BacklogModal = ({
                 className="text-2xl font-semibold cursor-pointer hover:text-blue-600 transition"
                 onClick={() => setIsEditingTitle(true)}
               >
-                <span className="mr-10"> {modalIssue.key}</span>
                 {issueForm.name}
               </h2>
             ) : (
@@ -253,16 +288,18 @@ const BacklogModal = ({
           </div>
 
           <div className="flex gap-4 items-center">
+           
+
             <button
               onClick={handleRestoreIssue}
               className="hover:scale-110 transition"
               title="Undo"
             >
-              <Undo2/>
+              <Undo2 />
             </button>
 
             <button
-            title="Save Changes"
+              title="Save Changes"
               onClick={handleSaveIssue}
               className="bg-blue-600 px-4 py-2 rounded flex items-center text-white gap-2 shadow-lg hover:bg-blue-700 transition"
             >
@@ -270,7 +307,7 @@ const BacklogModal = ({
             </button>
 
             <button
-            title="Close"
+              title="Close"
               onClick={() => setModalIssue(null)}
               className="text-red-600 hover:scale-110 transition"
             >
@@ -285,6 +322,27 @@ const BacklogModal = ({
           <div className="col-span-2 space-y-4">
             <div className="flex gap-3 justify-between">
               <div className="flex gap-3 items-center">
+                {/* SPRINT */}
+                <div className="flex gap-3 items-center">
+                  <label className="text-md font-semibold">Sprint</label>
+                  <select
+                    className="w-full px-3 py-1 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none mt-1"
+                    value={issueForm.sprint_id || ""}
+                    onChange={(e) =>
+                      handleUpdate(
+                        "sprint_id",
+                        e.target.value === "" ? undefined : e.target.value
+                      )
+                    }
+                  >
+                    <option value="">No Sprint</option>
+                    {sprints.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <button
                   onClick={() => setShowTagModal(true)}
                   className="flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full shadow-sm hover:bg-blue-100 transition"
@@ -386,19 +444,41 @@ const BacklogModal = ({
                     </button>
                     <button
                       onClick={async () => {
-                        const tagArray = tagInput
+                        // 🔹 1. existing tags
+                        const existingTags = Array.isArray(modalIssue.tags)
+                          ? modalIssue.tags
+                          : modalIssue.tags
+                          ? [modalIssue.tags]
+                          : [];
+
+                        // 🔹 2. new tags from input
+                        const newTags = tagInput
                           .split(",")
                           .map((t) => t.trim())
-                          .filter((t) => t !== ""); // Direct API Payload format
+                          .filter((t) => t !== "");
+
+                        // 🔹 3. merge + remove duplicates
+                        const mergedTags = [
+                          ...new Set([...existingTags, ...newTags]),
+                        ];
+
                         const payload = {
-                          assignee_id: issueForm.assignee_id,
-                          tags: tagArray,
+                          assignee_id: issueForm.assignee_id || null,
+                          tags: mergedTags,
                         };
+
                         try {
                           await postTags(modalIssue.id, payload);
                           toast.success("Tags updated!");
-                          setShowTagModal(false); // Update main modal view
-                          setModalIssue({ ...modalIssue, ...payload });
+
+                          // 🔹 UI update
+                          setModalIssue((prev) => ({
+                            ...prev,
+                            tags: mergedTags,
+                          }));
+
+                          setTagInput("");
+                          setShowTagModal(false);
                         } catch (err) {
                           toast.error("Failed to update tags");
                         }
@@ -413,36 +493,26 @@ const BacklogModal = ({
             )}
 
             {/* DESCRIPTION */}
-            {/* SPRINT */}
-            <div className="flex gap-3 items-center">
-              <label className="text-md font-semibold">Sprint</label>
-              <select
-                className="w-fit  px-3 py-2 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none mt-1"
-                value={issueForm.sprint_id || ""}
-                onChange={(e) =>
-                  handleUpdate(
-                    "sprint_id",
-                    e.target.value === "" ? null : e.target.value
-                  )
-                }
-              >
-                <option value="" disabled>
-                  Select Sprint
-                </option>
-                {sprints.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
 
             <div>
               <h3 className="font-semibold mb-2">Description</h3>
-              <p className="bg-white p-4 rounded shadow-md text-gray-700">
-                {modalIssue.description || "No description"}
-              </p>
+
+              {!isEditingDescription ? (
+                <p
+                  onClick={() => setIsEditingDescription(true)}
+                  className="bg-white p-4 rounded shadow-md text-gray-700 cursor-pointer hover:bg-gray-50"
+                >
+                  {issueForm.description || "Click to add description"}
+                </p>
+              ) : (
+                <textarea
+                  className="w-full min-h-[120px] p-4 rounded shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
+                  value={issueForm.description}
+                  onChange={(e) => handleUpdate("description", e.target.value)}
+                  onBlur={() => setIsEditingDescription(false)}
+                  autoFocus
+                />
+              )}
             </div>
 
             {/* STATUS */}
@@ -455,13 +525,13 @@ const BacklogModal = ({
 
             {/* COMMENTS HEADER */}
             <div className="flex justify-between mt-4">
-              <h3 className="font-semibold">Comments</h3>
-              <p className="text-gray-400 text-sm">
-                Total Comments :{" "}
+              <h3 className="font-semibold">
+                Comments :{" "}
                 <span className="text-blue-600">
                   {issueComments?.length || 0}
                 </span>
-              </p>
+              </h3>
+              <p className="text-gray-400 text-sm"></p>
             </div>
 
             {/* COMMENTS LIST */}
@@ -472,11 +542,25 @@ const BacklogModal = ({
                 issueComments.map((c) => (
                   <div key={c.id} className="bg-white p-3 rounded shadow-sm">
                     <p className="capitalize">{c.comment}</p>
-                    <div className="flex justify-between">
-                      <p className="text-xs text-gray-500">
+                    <div className=" flex  justify-between items-center">
+                      <p className="text-xs flex flex-col text-gray-500">
                         {new Date(c.created_at).toLocaleString()}
+
+                        <span className="text-[12px] font-bold">
+                          {c.author_name}
+                        </span>
                       </p>
-                      <p className="text-[12px]">{c.author_name}</p>
+
+                      <div>
+                       <button
+  onClick={() => handleDeleteComment(c.id)}
+  className="text-red-600 cursor-pointer hover:scale-110 transition"
+  title="Delete comment"
+>
+  <Trash2 size={14} />
+</button>
+
+                      </div>
                     </div>
                   </div>
                 ))
@@ -503,17 +587,13 @@ const BacklogModal = ({
           {/* ================= RIGHT ================= */}
           <div className="bg-white p-5 rounded shadow-lg space-y-4">
             <div className="flex justify-between items-center">
-               <h4 className="font-semibold">Planning</h4>
+              <h4 className="font-semibold">Planning</h4>
               <div>
-              <button 
-              className="cursor-pointer"
-              title="Attachments"
-              > 
-                <Paperclip size={16} />
-              </button>
+                <button className="cursor-pointer" title="Attachments">
+                  <Paperclip size={16} />
+                </button>
+              </div>
             </div>
-            </div>
-           
 
             {/* PRIORITY */}
             <div>

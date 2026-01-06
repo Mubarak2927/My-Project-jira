@@ -169,7 +169,7 @@ export const sprintTaskMove = async (sprintId, payload) => {
   );
   return res.data;
 };
-export const createSFeature = async (payload) => {
+export const createsFeature = async (payload) => {
   const res = await API.post(`/features/`, payload);
   return res.data;
 };
@@ -388,6 +388,11 @@ export const getIssueComments = async (issue_id) => {
   const res = await API.get(`/comments/?issue_id=${issue_id}`);
   return res.data;
 };
+export const deleteComments = async (commentid) => {
+  const res = await API.delete(`/comments/${commentid}`);
+  return res.data;
+};
+
 
 
 // Project Report

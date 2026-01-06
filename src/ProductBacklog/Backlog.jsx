@@ -406,6 +406,18 @@ const openIssueSingleModal = async (issueId, indexNo) => {
                 <User size={16} className="text-purple-600" />
                 <span>User Story</span>
               </div>
+              {/* FEATURE */}
+<div
+  onClick={() => {
+    setOpenWorkItem(false);
+    navigate(`/projects/${project.id}/work-items/new/feature`);
+  }}
+  className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+>
+  <Layers size={16} className="text-teal-600" />
+  <span>Feature</span>
+</div>
+
 
               {/* BUG */}
               <div

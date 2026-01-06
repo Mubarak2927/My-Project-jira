@@ -133,27 +133,61 @@ export default function Sprint() {
     setSelectedWeek(week);
   };
 
-  const handleStartSprint = async () => {
-    if (!selectedSprint) return;
+ const handleStartSprint = async () => {
+  if (!selectedSprint) return;
 
-    if (sprintIssues.length === 0) {
-      toast.error("Add at least one issue to start sprint");
-      return;
-    }
+  if (sprintIssues.length === 0) {
+    toast.error("Add at least one issue to start sprint");
+    return;
+  }
 
+  try {
+    setStartingSprint(true);
+
+    await startSprints(selectedSprint.id, sprintIssues);
+
+    toast.success(`Sprint ${selectedSprint.name} started`);
+
+    // ✅ update sprint status
+    setSprints((prev) =>
+      prev.map((sp) =>
+        sp.id === selectedSprint.id
+          ? { ...sp, status: "running" }
+          : sp
+      )
+    );
+
+    // ✅ VERY IMPORTANT
+    await fetchSprintIssues(selectedSprint.id);
+
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to start sprint");
+  } finally {
+    setStartingSprint(false);
+  }
+};
+
+useEffect(() => {
+  const loadRunningSprintBoard = async () => {
     try {
-      setStartingSprint(true);
+      const res = await getRunningSprints(projectId);
+      const sprintId = res?.sprints?.[0]?.sprint_id;
 
-      await startSprints(selectedSprint.id, sprintIssues);
-
-      toast.success(`Sprint ${selectedSprint.name} started `);
+      if (sprintId) {
+        await loadSprintBoard(sprintId); // 👈 sprint issues board
+      } else {
+        await loadBoard(); // fallback
+      }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to start sprint");
-    } finally {
-      setStartingSprint(false);
     }
   };
+
+  if (projectId) loadRunningSprintBoard();
+}, [projectId]);
+
+
 
   const handleViewSprint = async (sprint) => {
     setViewSprint(sprint);
@@ -361,19 +395,30 @@ export default function Sprint() {
               <p className="font-semibold">{s.name}</p>
               <p className="text-gray-500 mt-1">{s.goal}</p>
               {isSelected && sprintIssues.length > 0 && (
-                <div className="flex justify-end mb-4">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStartSprint();
-                    }}
-                    disabled={startingSprint}
-                    className="px-6 py-3 bg-green-600 text-white rounded-full hover:scale-105 transition cursor-pointer"
-                  >
-                    {startingSprint ? "Starting..." : "Start Sprint"}
-                  </button>
-                </div>
-              )}
+  <div className="flex justify-end mb-4">
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        if (s.status !== "running") handleStartSprint();
+      }}
+      disabled={startingSprint || s.status === "running"}
+      className={`px-6 py-3 rounded-full transition
+        ${
+          s.status === "running"
+            ? "bg-gray-400 text-white cursor-not-allowed"
+            : "bg-green-600 text-white hover:scale-105 cursor-pointer"
+        }
+      `}
+    >
+      {s.status === "running"
+        ? "Sprint Running"
+        : startingSprint
+        ? "Starting..."
+        : "Start Sprint"}
+    </button>
+  </div>
+)}
+
 
               <div className="flex justify-between   items-center text-xs mt-4">
                 <div>
