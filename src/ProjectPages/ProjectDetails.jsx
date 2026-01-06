@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate, useParams } from "react-router-dom";
-import { getAllProjects } from "../API/projectAPI";
+import { getAllProjects, getProjectById } from "../API/projectAPI";
 import { ChevronDown, ChevronUp, CircleArrowLeft, Fullscreen, List, ListFilter, Option } from "lucide-react";
 
 const ProjectLayout = () => {
@@ -9,26 +9,23 @@ const ProjectLayout = () => {
   const [loading, setLoading] = useState(true);
   const navigate =useNavigate()
 
-  useEffect(() => {
-    const fetchProject = async () => {
-      try {
-        setLoading(true);
-        const projects = await getAllProjects();
+useEffect(() => {
+  const fetchProject = async () => {
+    try {
+      setLoading(true);
+      const data = await getProjectById(projectId); // ✅ ONLY ONE API
+      setProject(data);
+    } catch (err) {
+      console.error("Failed to fetch project", err);
+      setProject(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        const selectedProject = projects.find(
-          (p) => String(p.id) === String(projectId)
-        );
+  fetchProject();
+}, [projectId]);
 
-        setProject(selectedProject || null);
-      } catch (err) {
-        console.error("Failed to fetch project", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProject();
-  }, [projectId]);
 
   if (loading) {
     return (

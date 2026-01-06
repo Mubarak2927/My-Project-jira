@@ -1,14 +1,15 @@
 // BacklogModal.jsx
 import React, { useEffect, useState } from "react";
-import { X, SaveAll, RotateCcw, Link2, Plus } from "lucide-react";
+import { X, SaveAll, RotateCcw, Link2, Plus, Undo2, Paperclip } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   updateIssue,
   getLinksByIssueId,
   getAllIssues,
   postTags,
+  getSprint,
 } from "../API/projectAPI";
-import { deleteLinkById } from "../API/LinkedItems"
+import { deleteLinkById } from "../API/LinkedItems";
 import ParentPickerModal from "./ParentPickerModal";
 
 const BacklogModal = ({
@@ -19,6 +20,7 @@ const BacklogModal = ({
   newComment,
   setNewComment,
   handleAddComment,
+  project,
 }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [issueForm, setIssueForm] = useState({});
@@ -29,9 +31,11 @@ const BacklogModal = ({
   const [showTagModal, setShowTagModal] = useState(false);
   const [tagInput, setTagInput] = useState("");
 
+  const [sprints, setSprints] = useState([]);
+
   /* ================= INIT ================= */
   useEffect(() => {
-    if (!modalIssue) return;
+    if (!modalIssue || !project?.id) return;
 
     const snapshot = {
       name: modalIssue.name || "",
@@ -42,6 +46,7 @@ const BacklogModal = ({
       estimated_hours: modalIssue.estimated_hours ?? null,
       status: modalIssue.status || "",
       assignee_id: modalIssue.assignee_id ?? null,
+      sprint_id: modalIssue.sprint_id ?? "",
       parent_ids:
         modalIssue.parent_ids ||
         (modalIssue.parent_id ? [modalIssue.parent_id] : []),
@@ -50,7 +55,20 @@ const BacklogModal = ({
     setIssueForm(structuredClone(snapshot));
     setOriginalIssue(structuredClone(snapshot));
     fetchLinkedParents();
-  }, [modalIssue?.id]);
+    fetchSprints();
+  }, [modalIssue?.id, project?.id]);
+
+  const fetchSprints = async () => {
+    if (!project?.id) return;
+
+    try {
+      const data = await getSprint(project.id);
+      setSprints(data || []);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load sprints");
+    }
+  };
 
   /* ================= FETCH LINKED PARENTS ================= */
   const fetchLinkedParents = async () => {
@@ -134,7 +152,9 @@ const BacklogModal = ({
     try {
       const updatedIssue = await updateIssue(modalIssue.id, payload); // 🔥 capture API response
       toast.success(
-        `"${updatedIssue.type.charAt(0).toUpperCase() + updatedIssue.type.slice(1)}" updated successfully!`
+        `"${
+          updatedIssue.type.charAt(0).toUpperCase() + updatedIssue.type.slice(1)
+        }" updated successfully!`
       );
 
       setOriginalIssue(structuredClone(payload));
@@ -144,7 +164,6 @@ const BacklogModal = ({
       toast.error("Failed to update issue");
     }
   };
-
 
   const handleRestoreIssue = () => {
     if (!originalIssue) return;
@@ -170,6 +189,35 @@ const BacklogModal = ({
     }
   };
 
+  const handleRemoveTag = async (tagToRemove) => {
+    const currentTags = Array.isArray(modalIssue.tags)
+      ? modalIssue.tags
+      : modalIssue.tags
+      ? [modalIssue.tags]
+      : [];
+
+    const updatedTags = currentTags.filter((t) => t !== tagToRemove);
+
+    const payload = {
+      assignee_id: issueForm.assignee_id || null,
+      tags: updatedTags, // 🔥 empty array pogum if last tag removed
+    };
+
+    try {
+      await postTags(modalIssue.id, payload);
+      toast.success("Tag removed");
+
+      // UI update
+      setModalIssue((prev) => ({
+        ...prev,
+        tags: updatedTags,
+      }));
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to remove tag");
+    }
+  };
+
   const storyPointsOptions = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
 
   if (!modalIssue) return null;
@@ -177,22 +225,21 @@ const BacklogModal = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.25)] w-[90vw] h-[90vh] flex flex-col transition-all duration-300">
-
         {/* ================= HEADER ================= */}
         <div className="px-6 py-4 flex justify-between items-start shadow-sm">
           <div>
             <p className="text-lg font-semibold text-orange-600">
               {modalIssue.type?.toUpperCase()}
             </p>
-              <p className="mr-4 text-gray-400">
-    ID :{modalIssue.serialNo}
-  </p>
+            <p className="mr-4 text-gray-400">ID : {modalIssue.tableIndex}</p>
+
             {!isEditingTitle ? (
               <h2
                 className="text-2xl font-semibold cursor-pointer hover:text-blue-600 transition"
                 onClick={() => setIsEditingTitle(true)}
               >
-                <span className="mr-10"> {modalIssue.key}</span>{issueForm.name}
+                <span className="mr-10"> {modalIssue.key}</span>
+                {issueForm.name}
               </h2>
             ) : (
               <input
@@ -206,11 +253,16 @@ const BacklogModal = ({
           </div>
 
           <div className="flex gap-4 items-center">
-            <button onClick={handleRestoreIssue} className="hover:scale-110 transition">
-              <RotateCcw />
+            <button
+              onClick={handleRestoreIssue}
+              className="hover:scale-110 transition"
+              title="Undo"
+            >
+              <Undo2/>
             </button>
 
             <button
+            title="Save Changes"
               onClick={handleSaveIssue}
               className="bg-blue-600 px-4 py-2 rounded flex items-center text-white gap-2 shadow-lg hover:bg-blue-700 transition"
             >
@@ -218,6 +270,7 @@ const BacklogModal = ({
             </button>
 
             <button
+            title="Close"
               onClick={() => setModalIssue(null)}
               className="text-red-600 hover:scale-110 transition"
             >
@@ -228,10 +281,8 @@ const BacklogModal = ({
 
         {/* ================= BODY ================= */}
         <div className="flex-1 overflow-y-auto p-6 grid grid-cols-3 gap-6">
-
           {/* ================= LEFT ================= */}
           <div className="col-span-2 space-y-4">
-
             <div className="flex gap-3 justify-between">
               <div className="flex gap-3 items-center">
                 <button
@@ -240,29 +291,30 @@ const BacklogModal = ({
                 >
                   <Plus size={14} /> Add Tags
                 </button>
-                 {/* TAGS */}
-            {modalIssue.tags && (
-  <div className="flex gap-2 flex-wrap">
-    {(Array.isArray(modalIssue.tags) ? modalIssue.tags : [modalIssue.tags]).map((t) => (
-      <span
-        key={t}
-        className="flex items-center gap-1 bg-white shadow-sm text-gray-700 px-3 py-1 rounded-full text-xs"
-      >
-        {t}
-        <button
-          className="text-red-500 hover:text-red-700"
-        >
-          ✕
-        </button>
-      </span>
-    ))}
-  </div>
-)}
-
-
-                
+                {/* TAGS */}
+                {modalIssue.tags && (
+                  <div className="flex gap-2 flex-wrap">
+                    {(Array.isArray(modalIssue.tags)
+                      ? modalIssue.tags
+                      : [modalIssue.tags]
+                    ).map((t) => (
+                      <span
+                        key={t}
+                        className="flex items-center gap-1 bg-white shadow-sm text-gray-700 px-3 py-1 rounded-full text-xs"
+                      >
+                        {t}
+                        <button
+                          onClick={() => handleRemoveTag(t)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-             
+
               <div className="flex flex-row items-center gap-3">
                 <p>Assignee:</p>
                 <select
@@ -277,7 +329,9 @@ const BacklogModal = ({
                 >
                   <option value="">Unassigned</option>
                   {users?.map((u) => (
-                    <option key={u.id} value={u.id}>{u.full_name}</option>
+                    <option key={u.id} value={u.id}>
+                      {u.full_name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -286,24 +340,40 @@ const BacklogModal = ({
             {showTagModal && (
               <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[60]">
                 <div className="bg-white p-6 rounded-xl shadow-xl w-96">
-                  <h3 className="text-lg font-bold mb-4">Add Tags & Assignee</h3> <div className="space-y-4">
+                  <h3 className="text-lg font-bold mb-4">
+                    Add Tags & Assignee
+                  </h3>{" "}
+                  <div className="space-y-4">
                     <div>
-                      <label className="text-sm block mb-1">Select Assignee</label>
-                      <select className="w-full border p-2 rounded"
+                      <label className="text-sm block mb-1">
+                        Select Assignee
+                      </label>
+                      <select
+                        className="w-full border p-2 rounded"
                         value={issueForm.assignee_id || ""}
-                        onChange={(e) => handleUpdate("assignee_id", e.target.value)}
-                      > <option value="">Select User</option>
-                        {users?.map(
-                          u => <option key={u.id} value={u.id}>{u.full_name}</option>)
+                        onChange={(e) =>
+                          handleUpdate("assignee_id", e.target.value)
                         }
+                      >
+                        {" "}
+                        <option value="">Select User</option>
+                        {users?.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.full_name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div>
-                      <label className="text-sm block mb-1">Tags (Comma separated)</label>
-                      <input type="text"
+                      <label className="text-sm block mb-1">
+                        Tags (Comma separated)
+                      </label>
+                      <input
+                        type="text"
                         placeholder="e.g. uiux, bug, api"
                         className="w-full border p-2 rounded"
-                        value={tagInput} onChange={(e) => setTagInput(e.target.value)}
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
                       />
                     </div>
                   </div>
@@ -314,37 +384,66 @@ const BacklogModal = ({
                     >
                       Cancel
                     </button>
-                    <button onClick={async () => {
-                      const tagArray = tagInput.split(',').map(t => t.trim()).filter(t => t !== ""); // Direct API Payload format 
-                      const payload = { assignee_id: issueForm.assignee_id, tags: tagArray };
-                      try {
-                        await postTags(modalIssue.id, payload);
-                        toast.success("Tags updated!");
-                        setShowTagModal(false); // Update main modal view 
-                        setModalIssue({ ...modalIssue, ...payload });
-                      } catch (err) {
-                        toast.error("Failed to update tags");
-                      }
-                    }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded shadow" >
+                    <button
+                      onClick={async () => {
+                        const tagArray = tagInput
+                          .split(",")
+                          .map((t) => t.trim())
+                          .filter((t) => t !== ""); // Direct API Payload format
+                        const payload = {
+                          assignee_id: issueForm.assignee_id,
+                          tags: tagArray,
+                        };
+                        try {
+                          await postTags(modalIssue.id, payload);
+                          toast.success("Tags updated!");
+                          setShowTagModal(false); // Update main modal view
+                          setModalIssue({ ...modalIssue, ...payload });
+                        } catch (err) {
+                          toast.error("Failed to update tags");
+                        }
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded shadow"
+                    >
                       Apply & Save
                     </button>
                   </div>
                 </div>
-              </div>)}
+              </div>
+            )}
 
             {/* DESCRIPTION */}
-             <p className="text-sm text-gray-500">
-                  Iteration : <span className="font-medium">—</span>
-                </p>
+            {/* SPRINT */}
+            <div className="flex gap-3 items-center">
+              <label className="text-md font-semibold">Sprint</label>
+              <select
+                className="w-fit  px-3 py-2 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none mt-1"
+                value={issueForm.sprint_id || ""}
+                onChange={(e) =>
+                  handleUpdate(
+                    "sprint_id",
+                    e.target.value === "" ? null : e.target.value
+                  )
+                }
+              >
+                <option value="" disabled>
+                  Select Sprint
+                </option>
+                {sprints.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+
             <div>
               <h3 className="font-semibold mb-2">Description</h3>
               <p className="bg-white p-4 rounded shadow-md text-gray-700">
                 {modalIssue.description || "No description"}
               </p>
             </div>
-
-           
 
             {/* STATUS */}
             <div className="flex gap-2 items-center">
@@ -358,7 +457,10 @@ const BacklogModal = ({
             <div className="flex justify-between mt-4">
               <h3 className="font-semibold">Comments</h3>
               <p className="text-gray-400 text-sm">
-                Total Comments : <span className="text-blue-600">{issueComments?.length || 0}</span>
+                Total Comments :{" "}
+                <span className="text-blue-600">
+                  {issueComments?.length || 0}
+                </span>
               </p>
             </div>
 
@@ -369,11 +471,13 @@ const BacklogModal = ({
               ) : (
                 issueComments.map((c) => (
                   <div key={c.id} className="bg-white p-3 rounded shadow-sm">
-                    <p className="text-sm font-semibold">{c.author_name}</p>
-                    <p className="text-sm">{c.comment}</p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(c.created_at).toLocaleString()}
-                    </p>
+                    <p className="capitalize">{c.comment}</p>
+                    <div className="flex justify-between">
+                      <p className="text-xs text-gray-500">
+                        {new Date(c.created_at).toLocaleString()}
+                      </p>
+                      <p className="text-[12px]">{c.author_name}</p>
+                    </div>
                   </div>
                 ))
               )}
@@ -398,7 +502,18 @@ const BacklogModal = ({
 
           {/* ================= RIGHT ================= */}
           <div className="bg-white p-5 rounded shadow-lg space-y-4">
-            <h4 className="font-semibold">Planning</h4>
+            <div className="flex justify-between items-center">
+               <h4 className="font-semibold">Planning</h4>
+              <div>
+              <button 
+              className="cursor-pointer"
+              title="Attachments"
+              > 
+                <Paperclip size={16} />
+              </button>
+            </div>
+            </div>
+           
 
             {/* PRIORITY */}
             <div>
@@ -409,13 +524,14 @@ const BacklogModal = ({
                 onChange={(e) => handleUpdate("priority", e.target.value)}
               >
                 {["highest", "high", "medium", "low", "lowest"].map((p) => (
-                  <option key={p} value={p}>{p}</option>
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
                 ))}
               </select>
             </div>
 
             {/* ASSIGNEE */}
-
 
             {/* ESTIMATED HOURS */}
             <div>
@@ -449,7 +565,9 @@ const BacklogModal = ({
                 >
                   <option value="">Select points</option>
                   {storyPointsOptions.map((p) => (
-                    <option key={p} value={p}>{p}</option>
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -497,7 +615,6 @@ const BacklogModal = ({
         />
       )}
     </div>
-
   );
 };
 

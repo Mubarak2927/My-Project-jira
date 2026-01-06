@@ -6,12 +6,11 @@ import {
   Bug,
   BookOpen,
   Layers,
+  RotateCcw,
+  Undo,
+  Undo2,
 } from "lucide-react";
-import {
-  useNavigate,
-  useParams,
-  useOutletContext,
-} from "react-router-dom";
+import { useNavigate, useParams, useOutletContext } from "react-router-dom";
 import {
   createEpic,
   getEpic,
@@ -41,7 +40,7 @@ const Input = React.memo(
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      className="w-full border rounded p-2"
+     className=" w-full  px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
     />
   )
 );
@@ -60,11 +59,23 @@ const WorkItemCreate = () => {
     priority: "",
     assignee: "",
     story_points: "",
+    sprint_id: "", // new
+    parent_id: "", // new
+    estimated_hours: "", // new
+    feature_id: "", // new
+    tags: [], // new
+    location: "backlog", // default
   });
 
   /* ================= COMMENTS STATE ================= */
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
+
+  // Store original form and comments for restore
+  const [originalForm] = useState(structuredClone(form)); // store initial form
+  const [originalComments] = useState(structuredClone(comments)); // store initial comments
+  
+
   const storyPointsOptions = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
 
   /* ================= FETCH EPICS ================= */
@@ -89,20 +100,19 @@ const WorkItemCreate = () => {
   }, [type]);
   const [users, setUsers] = useState([]);
 
-useEffect(() => {
-  const fetchUsers = async () => {
-    try {
-      const data = await getAllUsers();
-      setUsers(data); // API returns array of users
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to fetch users");
-    }
-  };
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const data = await getAllUsers();
+        setUsers(data); // API returns array of users
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to fetch users");
+      }
+    };
 
-  fetchUsers();
-}, []);
-
+    fetchUsers();
+  }, []);
 
   /* ================= ADD COMMENT ================= */
   const handleAddComment = async () => {
@@ -126,80 +136,111 @@ useEffect(() => {
 
   /* ================= SUBMIT ================= */
   // WorkItemCreate.jsx
-const handleSave = async () => {
-  try {
-    if (!form.name.trim()) {
-      toast.error("Title required");
-      return;
-    }
+  const handleSave = async () => {
+    try {
+      if (!form.name.trim()) {
+        toast.error("Title required");
+        return;
+      }
 
-    if (type === "epic") {
-      await createEpic({
-        name: form.name,
-        description: form.description,
-        project_id: project.id,
+      if (type === "epic") {
+        await createEpic({
+          name: form.name,
+          description: form.description,
+          project_id: project.id,
+          end_date: form.end_date || null,
+          key: form.key || undefined, // optional
+        });
+      } else {
+        await createIssues({
+          name: form.name,
+          description: form.description,
+          epic_id: form.epic_id || null,
+          priority: form.priority || null,
+          assignee_id: form.assignee || null,
+          type,
+          story_points: type === "story" ? form.story_points : null,
+          project_id: project.id,
+          sprint_id: form.sprint_id || null,
+          parent_id: form.parent_id || null,
+          estimated_hours: form.estimated_hours || null,
+          feature_id: form.feature_id || null,
+          location: form.location,
+          tags: form.tags,
+          comments, // already handled
+        });
+
+        toast.success(`${type} Created`);
+      }
+
+      // 🔥 IMPORTANT
+      navigate(-1, {
+        state: { refreshBacklog: true },
       });
-      toast.success("Epic Created");
-    } else {
-      await createIssues({
-        name: form.name,
-        description: form.description,
-        epic_id: form.epic_id || null,
-        priority: form.priority,
-         assignee_id: form.assignee || null,
-        type,
-        story_points: type === "story" ? form.story_points : null,
-        project_id: project.id,
-        comments,
-      });
-      toast.success(`${type} Created`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong");
     }
+  };
+  const handleRestoreIssue = () => {
+    if (!window.confirm("Undo all changes?")) return;
 
-    // 🔥 IMPORTANT
-    navigate(-1, {
-      state: { refreshBacklog: true },
-    });
+    setForm(structuredClone(originalForm));
+    setComments(structuredClone(originalComments)); // restore comments
+    setNewComment(""); // clear the new comment input if any
 
-  } catch (err) {
-    console.error(err);
-    toast.error("Something went wrong");
-  }
-};
-;
-  
+    toast("Changes restored", { icon: "↩️" });
+  };
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/70 z-50 flex h-screen justify-center items-center pt-6">
-      <div className="bg-white w-[900px] max-w-[95%] max-h-[85vh] rounded-lg shadow-xl overflow-hidden">
+<div
+  className={`bg-gray-200 rounded-lg shadow-xl overflow-hidden 
+    ${type === "epic" ? "w-[60vw] h-[40vh]" : "w-[90vw] h-[65vh]"}`}
+>
 
         {/* ================= HEADER ================= */}
         <div className="flex justify-between items-center px-5 py-3 ">
           <div className="flex items-center gap-2">
             {React.createElement(TYPE_ICON[type] || CheckSquare, {
-              size: 18,
+              size: 28,
               className: "text-orange-500",
             })}
-            <span className="font-semibold text-blue-600 uppercase">
-              New {type}
+            <span className="font-semibold text-2xl text-blue-600 uppercase">
+              {type}
             </span>
           </div>
-          {/* <button onClick={() => navigate(-1)}>
-            <X />
-          </button> */}
+
+          <div className=" px-6 py-3 flex justify-end gap-3">
+            <button
+              onClick={handleRestoreIssue}
+              className="hover:scale-110 cursor-pointer transition"
+              title="undo"
+            >
+              <Undo2 />
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-6 py-1 bg-blue-600 cursor-pointer text-white rounded-xs"
+              title="Save"
+            >
+              Save
+            </button>
+            <button title="Close" onClick={() => navigate(-1)}>
+              <X className="text-red-600 cursor-pointer" />
+            </button>
+          </div>
         </div>
 
         {/* ================= BODY ================= */}
         <div className="p-6 grid grid-cols-3 gap-6 max-h-[70vh] overflow-y-auto">
-
           {/* LEFT */}
           <div className="col-span-2 space-y-4">
             <Input
-              autoFocus
+              className="outline-none"
               placeholder={type === "epic" ? "Epic Name" : "Title"}
               value={form.name}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, name: e.target.value }))
-              }
+              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
             />
 
             <textarea
@@ -208,32 +249,8 @@ const handleSave = async () => {
               onChange={(e) =>
                 setForm((p) => ({ ...p, description: e.target.value }))
               }
-              className="w-full h-28 border rounded p-3"
+             className="w-full h-[30vh] px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
             />
-
-           {type === "story" && (
-  <div>
-    <p className="text-gray-500 mb-1">Story Points</p>
-    <select
-      className="border p-2 rounded w-full"
-      value={form.story_points}
-      onChange={(e) =>
-        setForm((p) => ({
-          ...p,
-          story_points: e.target.value,
-        }))
-      }
-    >
-      <option value="">Select Story Points</option>
-      {storyPointsOptions.map((sp) => (
-        <option key={sp} value={sp}>
-          {sp}
-        </option>
-      ))}
-    </select>
-  </div>
-)}
-
 
             {/* COMMENTS */}
             {/* <div className="border rounded p-3 bg-gray-50">
@@ -241,7 +258,7 @@ const handleSave = async () => {
                 Comments ({comments.length})
               </p> */}
 
-              {/* <div className="space-y-2 max-h-32 overflow-y-auto mb-2">
+            {/* <div className="space-y-2 max-h-32 overflow-y-auto mb-2">
                 {comments.length === 0 && (
                   <p className="text-sm text-gray-400">
                     No comments yet
@@ -257,7 +274,7 @@ const handleSave = async () => {
                 ))}
               </div> */}
 
-              {/* <div className="flex gap-2">
+            {/* <div className="flex gap-2">
                 <input
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
@@ -280,7 +297,7 @@ const handleSave = async () => {
               <div>
                 <p className="text-gray-500 mb-1">Epic</p>
                 <select
-                  className="border p-2 rounded w-full"
+                  className="w-full px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none mt-1"
                   value={form.epic_id}
                   onChange={(e) =>
                     setForm((p) => ({
@@ -301,7 +318,7 @@ const handleSave = async () => {
               <div>
                 <p className="text-gray-500 mb-1">Priority</p>
                 <select
-                  className="border p-2 rounded w-full"
+                  className="w-full px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none mt-1"
                   value={form.priority}
                   onChange={(e) =>
                     setForm((p) => ({
@@ -310,7 +327,9 @@ const handleSave = async () => {
                     }))
                   }
                 >
-                  <option value="" disabled>Select</option>
+                  <option value="" disabled>
+                    Select
+                  </option>
                   <option value="highest">Highest</option>
                   <option value="high">High</option>
                   <option value="medium">Medium</option>
@@ -318,47 +337,68 @@ const handleSave = async () => {
                   <option value="lowest">Lowest</option>
                 </select>
               </div>
+              {type === "story" && (
+                <div>
+                  <p className="text-gray-500 mb-1">Story Points</p>
+                  <select
+                    className="w-full px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none mt-1"
+                    value={form.story_points}
+                    onChange={(e) =>
+                      setForm((p) => ({
+                        ...p,
+                        story_points: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Select Story Points</option>
+                    {storyPointsOptions.map((sp) => (
+                      <option key={sp} value={sp}>
+                        {sp}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div>
+                <p className="text-gray-500 mb-1">Estimated Hours</p>
+                <input
+                  type="number"
+                  className="w-full px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none mt-1"
+                  value={form.estimated_hours}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, estimated_hours: e.target.value }))
+                  }
+                  placeholder="Enter estimated hours"
+                />
+              </div>
 
               <div>
-  <p className="text-gray-500 mb-1">Assign To</p>
-  <select
-    className="border p-2  rounded w-full"
-    value={form.assignee}
-    onChange={(e) =>
-      setForm((p) => ({
-        ...p,
-        assignee: e.target.value,
-      }))
-    }
-  >
-    <option value="" disabled>Select Employee</option>
-    {users.map((u) => (
-      <option key={u.id} value={u.id}>
-        {u.full_name}
-      </option>
-    ))}
-  </select>
-</div>
-
+                <p className="text-gray-500 mb-1">Assign To</p>
+                <select
+                  className="w-full px-3 py-3  rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none mt-1"
+                  value={form.assignee}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      assignee: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="" disabled>
+                    Select Employee
+                  </option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.full_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           )}
         </div>
 
         {/* FOOTER */}
-        <div className=" px-6 py-3 flex justify-end gap-3 bg-gray-50">
-          <button
-            onClick={() => navigate(-1)}
-            className="px-4 py-1 border rounded"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-6 py-1 bg-blue-600 text-white rounded"
-          >
-            Save
-          </button>
-        </div>
       </div>
     </div>
   );

@@ -153,10 +153,14 @@ const Backlog = ({
       toast.error("Failed to fetch users");
     }
   };
-  const openIssueSingleModal = async (issueId) => {
+const openIssueSingleModal = async (issueId, indexNo) => {
   try {
-    const issue = await getSingleIssues(issueId); // 🔥 ONLY ONE API CALL
-    setModalIssue(issue);
+    const issue = await getSingleIssues(issueId);
+
+    setModalIssue({
+      ...issue,
+      tableIndex: indexNo, // 🔥 BACKLOG INDEX
+    });
   } catch (err) {
     console.error(err);
     toast.error("Failed to load issue");
@@ -422,6 +426,9 @@ const Backlog = ({
                 <th className="px-3 py-2">Title</th>
                 <th className="px-3 py-2">Priority</th>
                 <th className="px-3 py-2">Assigned to</th>
+                <th className="px-3 py-2">Tag</th>
+
+
               </tr>
             </thead>
 
@@ -448,12 +455,13 @@ const Backlog = ({
 
                   {/* TITLE */}
                   <td className="px-3 py-2 text-center font-medium">
-                   <p
-  onClick={() => openIssueSingleModal(issue.id)}
+                 <p
+  onClick={() => openIssueSingleModal(issue.id, index + 1)}
   className="hover:underline cursor-pointer w-fit"
 >
   {issue.name}
 </p>
+
 
                     {issue.type === "story" && issue.story_points && (
                       <span className="ml-2 text-xs text-green-600">
@@ -468,6 +476,22 @@ const Backlog = ({
                   <td className="px-3 py-2">
                     {getUserName(issue.assignee_id)} {/* <-- use assignee_id */}
                   </td>
+                 {/* TAGS */}
+<td className="px-3 py-2">
+  {issue.tags && (
+    <div className="flex gap-1 flex-wrap justify-center">
+      {(Array.isArray(issue.tags) ? issue.tags : [issue.tags]).map((tag) => (
+        <span
+          key={tag}
+          className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs"
+        >
+          {tag}
+        </span>
+      ))}
+    </div>
+  )}
+</td>
+
                 </tr>
               ))}
 
@@ -524,6 +548,8 @@ const Backlog = ({
         newComment={newComment}
         setNewComment={setNewComment}
         handleAddComment={handleAddComment}
+        onIssueUpdated={handleUpdateIssue}
+         project={project}
       />
     </>
   );
