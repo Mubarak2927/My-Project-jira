@@ -137,6 +137,28 @@ const Backlog = ({
     fetchUsers()
   }, []);
 
+  // 🔥 ALL FILTERED TASK IDs
+const allFilteredIds = filteredIssues.map((i) => i.id);
+
+// 🔥 CHECK ALL SELECTED
+const isAllSelected =
+  allFilteredIds.length > 0 &&
+  allFilteredIds.every((id) => selectedIssues.includes(id));
+
+// 🔥 SELECT / UNSELECT ALL
+const toggleSelectAll = () => {
+  if (isAllSelected) {
+    setSelectedIssues((prev) =>
+      prev.filter((id) => !allFilteredIds.includes(id))
+    );
+  } else {
+    setSelectedIssues((prev) => [
+      ...new Set([...prev, ...allFilteredIds]),
+    ]);
+  }
+};
+
+
   const fetchUsers = async () => {
     try {
       const response = await getAllUsers();
@@ -400,20 +422,35 @@ const openIssueSingleModal = async (issueId, indexNo) => {
           )}
         </div>
 
-        <div className=" mt-2 mb-2 flex justify-between">
-          <p className=" text-gray-400">Task Lists</p>
-          <button
-            onClick={handleBulkDelete}
-            disabled={selectedIssues.length === 0}
-            className={`flex p-2 items-center gap-2 shadow-sm/50 rounded 
-    ${selectedIssues.length === 0
-                ? "text-gray-400 cursor-not-allowed"
-                : "text-red-600 hover:bg-gray-200 hover:scale-105 cursor-pointer"
-              }`}
-          >
-            <Trash2 size={15} />
-          </button>
-        </div>
+       <div className="mt-2 mb-2 flex justify-between items-center">
+  <div className="flex items-center p-3 gap-3">
+   
+
+    {/* 🔥 SELECT ALL TASKS */}
+    <label className="flex items-center gap-2 text-sm cursor-pointer">
+      <input
+        type="checkbox"
+        checked={isAllSelected}
+        onChange={toggleSelectAll}
+      />
+      <span>Select All</span>
+    </label>
+  </div>
+
+  <button
+    onClick={handleBulkDelete}
+    disabled={selectedIssues.length === 0}
+    className={`flex p-2 items-center gap-2 shadow-sm/50 rounded 
+      ${
+        selectedIssues.length === 0
+          ? "text-gray-400 cursor-not-allowed"
+          : "text-red-600 hover:bg-gray-200 hover:scale-105 cursor-pointer"
+      }`}
+  >
+    <Trash2 size={15} />
+  </button>
+</div>
+
 
         {/* ================= ISSUE TABLE ================= */}
         <div className="overflow-y-auto h-[49vh] rounded">
@@ -426,7 +463,6 @@ const openIssueSingleModal = async (issueId, indexNo) => {
                 <th className="px-3 py-2">Title</th>
                 <th className="px-3 py-2">Priority</th>
                 <th className="px-3 py-2">Assigned to</th>
-                <th className="px-3 py-2">Tag</th>
 
 
               </tr>
@@ -477,20 +513,7 @@ const openIssueSingleModal = async (issueId, indexNo) => {
                     {getUserName(issue.assignee_id)} {/* <-- use assignee_id */}
                   </td>
                  {/* TAGS */}
-<td className="px-3 py-2">
-  {issue.tags && (
-    <div className="flex gap-1 flex-wrap justify-center">
-      {(Array.isArray(issue.tags) ? issue.tags : [issue.tags]).map((tag) => (
-        <span
-          key={tag}
-          className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs"
-        >
-          {tag}
-        </span>
-      ))}
-    </div>
-  )}
-</td>
+
 
                 </tr>
               ))}

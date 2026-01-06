@@ -99,11 +99,11 @@ const filteredTasks = showDoneOnly
           <table className="w-full text-sm rounded-lg overflow-hidden">
             <thead className="bg-gray-300">
               <tr>
-                <th className="px-3 py-2 border-b text-center">SI No</th>
-                <th className="px-3 py-2 border-b text-center">Name</th>
-                <th className="px-3 py-2 border-b text-center">Epic</th>
-                <th className="px-3 py-2 border-b text-center">Type</th>
-                <th className="px-3 py-2 border-b text-center">Status</th>
+                <th className="px-3 py-2    text-center">SI No</th>
+                <th className="px-3 py-2   text-center">Name</th>
+                <th className="px-3 py-2   text-center">Epic</th>
+                <th className="px-3 py-2   text-center">Type</th>
+                <th className="px-3 py-2   text-center">Status</th>
               </tr>
             </thead>
 
@@ -114,11 +114,11 @@ const filteredTasks = showDoneOnly
                   key={task.id}
                   className="bg-gray-100 hover:bg-gray-300 transition-colors"
                 >
-                  <td className="px-3 py-2 text-center border-b">
+                  <td className="px-3 py-2 text-center border-b border-gray-300">
                     {index + 1}
                   </td>
 
-                  <td className="px-3 py-2 border-b">
+                  <td className="px-3 py-2 border-b border-gray-300">
                     <p
                       className="hover:underline cursor-pointer font-medium"
                       onClick={() =>
@@ -133,15 +133,15 @@ const filteredTasks = showDoneOnly
                     </p>
                   </td>
 
-                  <td className="px-3 py-2 border-b">
+                  <td className="px-3 py-2 border-b border-gray-300">
                     {task.epic_name || "-"}
                   </td>
 
-                  <td className="px-3 py-2 text-center border-b capitalize">
+                  <td className="px-3 py-2 text-center border-b border-gray-300 capitalize">
                     {task.type}
                   </td>
 
-                  <td className="px-3 py-2 text-center border-b capitalize">
+                  <td className="px-3 py-2 text-center border-b border-gray-300 capitalize">
                     {task.status}
                   </td>
                 </tr>
