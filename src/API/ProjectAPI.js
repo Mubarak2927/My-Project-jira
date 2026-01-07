@@ -189,6 +189,10 @@ export const getFeature = async (featureID) => {
   const res = await API.get(`/features/${featureID}`);
   return res.data;
 };
+export const getFeatures = async (projectId) => {
+  const res = await API.get(`/features/?project_id=${projectId}`);
+  return res.data;
+};
 
 
 export const sprintById = async (project_id) => {

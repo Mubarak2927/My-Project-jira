@@ -1,5 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { CheckSquare, BookOpen, Bug, Plus, Dot, Trash2, SquarePen, Eye, X, Crown, Layers, User, List, ListFilter, Fullscreen, FileUp, Search, BookmarkCheck, Maximize2, Minimize2, Undo, SaveAll, RotateCcw, } from "lucide-react";
+import {
+  CheckSquare,
+  BookOpen,
+  Bug,
+  Plus,
+  Dot,
+  Trash2,
+  SquarePen,
+  Eye,
+  X,
+  Crown,
+  Layers,
+  User,
+  List,
+  ListFilter,
+  Fullscreen,
+  FileUp,
+  Search,
+  BookmarkCheck,
+  Maximize2,
+  Minimize2,
+  Undo,
+  SaveAll,
+  RotateCcw,
+} from "lucide-react";
 import { useNavigate, useOutletContext } from "react-router";
 import toast, { Toaster } from "react-hot-toast";
 import {
@@ -45,39 +69,53 @@ const Backlog = ({
   const [searchType, setSearchType] = useState("");
   const [searchAssignee, setSearchAssignee] = useState("");
   const [searchEpic, setSearchEpic] = useState("");
+  const [searchLabel, setSearchLabel] = useState("");
 
   /* ===================== VIEW OPTIONS STATE ===================== */
   const [showViewOptions, setShowViewOptions] = useState(false);
   const [showHighestOnly, setShowHighestOnly] = useState(false);
 
+  const allTags = Array.from(
+    new Set(
+      issues.flatMap((i) =>
+        Array.isArray(i.tags) ? i.tags : i.tags ? [i.tags] : []
+      )
+    )
+  );
 
   /* ===================== FILTERED ISSUES ===================== */
   const filteredIssues = issues.filter((issue) => {
-  // 🔥 TASK ONLY
-  if (issue.type !== "task" ) return false;
+    // 🔥 TASK ONLY
+    if (issue.type !== "task") return false;
 
-  if (issue.sprint_id) return false;
+    if (issue.sprint_id) return false;
 
-  if (showHighestOnly && issue.priority !== "highest") return false;
+    if (showHighestOnly && issue.priority !== "highest") return false;
 
-  if (searchEpic && issue.epic_id !== searchEpic) return false;
+    if (searchEpic && issue.epic_id !== searchEpic) return false;
 
-  if (searchType && issue.type !== searchType) return false;
+    if (searchType && issue.type !== searchType) return false;
 
-  if (searchAssignee && issue.assignee_id !== searchAssignee) return false;
+    if (searchAssignee && issue.assignee_id !== searchAssignee) return false;
 
-  if (searchKeyword) {
-    const keyword = searchKeyword.toLowerCase();
-    const inTitle = issue.name.toLowerCase().includes(keyword);
-    const inDesc = issue.description?.toLowerCase().includes(keyword);
-    if (!inTitle && !inDesc) return false;
-  }
+    if (searchKeyword) {
+      const keyword = searchKeyword.toLowerCase();
+      const inTitle = issue.name.toLowerCase().includes(keyword);
+      const inDesc = issue.description?.toLowerCase().includes(keyword);
+      if (!inTitle && !inDesc) return false;
+    }
+    if (searchLabel) {
+      const tags = Array.isArray(issue.tags)
+        ? issue.tags
+        : issue.tags
+        ? [issue.tags]
+        : [];
 
-  return true;
-});
+      if (!tags.includes(searchLabel)) return false;
+    }
 
-
-
+    return true;
+  });
 
   const navigate = useNavigate();
 
@@ -103,8 +141,6 @@ const Backlog = ({
   const [showFilterBar, setShowFilterBar] = useState(false);
 
   // const [modalIssue, setModalIssue] = useState(null);
-
-
 
   const handleAddParent = (item) => {
     console.log("Parent added:", item);
@@ -134,30 +170,27 @@ const Backlog = ({
   }, [project]);
 
   useEffect(() => {
-    fetchUsers()
+    fetchUsers();
   }, []);
 
   // 🔥 ALL FILTERED TASK IDs
-const allFilteredIds = filteredIssues.map((i) => i.id);
+  const allFilteredIds = filteredIssues.map((i) => i.id);
 
-// 🔥 CHECK ALL SELECTED
-const isAllSelected =
-  allFilteredIds.length > 0 &&
-  allFilteredIds.every((id) => selectedIssues.includes(id));
+  // 🔥 CHECK ALL SELECTED
+  const isAllSelected =
+    allFilteredIds.length > 0 &&
+    allFilteredIds.every((id) => selectedIssues.includes(id));
 
-// 🔥 SELECT / UNSELECT ALL
-const toggleSelectAll = () => {
-  if (isAllSelected) {
-    setSelectedIssues((prev) =>
-      prev.filter((id) => !allFilteredIds.includes(id))
-    );
-  } else {
-    setSelectedIssues((prev) => [
-      ...new Set([...prev, ...allFilteredIds]),
-    ]);
-  }
-};
-
+  // 🔥 SELECT / UNSELECT ALL
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIssues((prev) =>
+        prev.filter((id) => !allFilteredIds.includes(id))
+      );
+    } else {
+      setSelectedIssues((prev) => [...new Set([...prev, ...allFilteredIds])]);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -175,20 +208,19 @@ const toggleSelectAll = () => {
       toast.error("Failed to fetch users");
     }
   };
-const openIssueSingleModal = async (issueId, indexNo) => {
-  try {
-    const issue = await getSingleIssues(issueId);
+  const openIssueSingleModal = async (issueId, indexNo) => {
+    try {
+      const issue = await getSingleIssues(issueId);
 
-    setModalIssue({
-      ...issue,
-      tableIndex: indexNo, // 🔥 BACKLOG INDEX
-    });
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to load issue");
-  }
-};
-
+      setModalIssue({
+        ...issue,
+        tableIndex: indexNo, // 🔥 BACKLOG INDEX
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load issue");
+    }
+  };
 
   /* ===================== PRIORITY COLORS ===================== */
   const priorityColors = {
@@ -284,22 +316,20 @@ const openIssueSingleModal = async (issueId, indexNo) => {
         </button>
         {showViewOptions && (
           <div className="absolute right-10 top-66 bg-white rounded-lg shadow-lg p-3 z-50">
-
-
             {/* PRIORITY TOGGLE */}
             <div className="flex items-center gap-5">
-              <span className="text-sm text-gray-700">
-                Highest Priority
-              </span>
+              <span className="text-sm text-gray-700">Highest Priority</span>
 
               <button
                 onClick={() => setShowHighestOnly(!showHighestOnly)}
-                className={`w-10 h-5 flex items-center cursor-pointer rounded-full p-1 transition ${showHighestOnly ? "bg-green-500" : "bg-gray-300"
-                  }`}
+                className={`w-10 h-5 flex items-center cursor-pointer rounded-full p-1 transition ${
+                  showHighestOnly ? "bg-green-500" : "bg-gray-300"
+                }`}
               >
                 <div
-                  className={`bg-white w-4 h-4 rounded-full shadow transform transition ${showHighestOnly ? "translate-x-5" : ""
-                    }`}
+                  className={`bg-white w-4 h-4 rounded-full shadow transform transition ${
+                    showHighestOnly ? "translate-x-5" : ""
+                  }`}
                 />
               </button>
             </div>
@@ -313,7 +343,6 @@ const openIssueSingleModal = async (issueId, indexNo) => {
         >
           <ListFilter />
         </button>
-
 
         <button
           onClick={toggleFullscreen}
@@ -363,10 +392,20 @@ const openIssueSingleModal = async (issueId, indexNo) => {
                     </option>
                   ))}
                 </select>
+                <select
+                  value={searchLabel}
+                  onChange={(e) => setSearchLabel(e.target.value)}
+                >
+                  <option value="">Labels</option>
+                  {allTags.map((tag) => (
+                    <option key={tag} value={tag}>
+                      {tag}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           )}
-
         </div>
         <div className="relative">
           {openWorkItem && (
@@ -407,17 +446,16 @@ const openIssueSingleModal = async (issueId, indexNo) => {
                 <span>User Story</span>
               </div>
               {/* FEATURE */}
-<div
-  onClick={() => {
-    setOpenWorkItem(false);
-    navigate(`/projects/${project.id}/work-items/new/feature`);
-  }}
-  className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
->
-  <Layers size={16} className="text-teal-600" />
-  <span>Feature</span>
-</div>
-
+              <div
+                onClick={() => {
+                  setOpenWorkItem(false);
+                  navigate(`/projects/${project.id}/work-items/new/feature`);
+                }}
+                className="flex items-center gap-3 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              >
+                <Layers size={16} className="text-teal-600" />
+                <span>Feature</span>
+              </div>
 
               {/* BUG */}
               <div
@@ -434,35 +472,32 @@ const openIssueSingleModal = async (issueId, indexNo) => {
           )}
         </div>
 
-       <div className="mt-2 mb-2 flex justify-between items-center">
-  <div className="flex items-center p-3 gap-3">
-   
+        <div className="mt-2 mb-2 flex justify-between items-center">
+          <div className="flex items-center p-3 gap-3">
+            {/* 🔥 SELECT ALL TASKS */}
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                onChange={toggleSelectAll}
+              />
+              <span>Select All</span>
+            </label>
+          </div>
 
-    {/* 🔥 SELECT ALL TASKS */}
-    <label className="flex items-center gap-2 text-sm cursor-pointer">
-      <input
-        type="checkbox"
-        checked={isAllSelected}
-        onChange={toggleSelectAll}
-      />
-      <span>Select All</span>
-    </label>
-  </div>
-
-  <button
-    onClick={handleBulkDelete}
-    disabled={selectedIssues.length === 0}
-    className={`flex p-2 items-center gap-2 shadow-sm/50 rounded 
+          <button
+            onClick={handleBulkDelete}
+            disabled={selectedIssues.length === 0}
+            className={`flex p-2 items-center gap-2 shadow-sm/50 rounded 
       ${
         selectedIssues.length === 0
           ? "text-gray-400 cursor-not-allowed"
           : "text-red-600 hover:bg-gray-200 hover:scale-105 cursor-pointer"
       }`}
-  >
-    <Trash2 size={15} />
-  </button>
-</div>
-
+          >
+            <Trash2 size={15} />
+          </button>
+        </div>
 
         {/* ================= ISSUE TABLE ================= */}
         <div className="overflow-y-auto h-[49vh] rounded">
@@ -475,8 +510,7 @@ const openIssueSingleModal = async (issueId, indexNo) => {
                 <th className="px-3 py-2">Title</th>
                 <th className="px-3 py-2">Priority</th>
                 <th className="px-3 py-2">Assigned to</th>
-
-
+                <th className="px-3 py-2">Label</th>
               </tr>
             </thead>
 
@@ -503,13 +537,12 @@ const openIssueSingleModal = async (issueId, indexNo) => {
 
                   {/* TITLE */}
                   <td className="px-3 py-2 text-center font-medium">
-                 <p
-  onClick={() => openIssueSingleModal(issue.id, index + 1)}
-  className="hover:underline cursor-pointer w-fit"
->
-  {issue.name}
-</p>
-
+                    <p
+                      onClick={() => openIssueSingleModal(issue.id, index + 1)}
+                      className="hover:underline cursor-pointer w-fit"
+                    >
+                      {issue.name}
+                    </p>
 
                     {issue.type === "story" && issue.story_points && (
                       <span className="ml-2 text-xs text-green-600">
@@ -517,22 +550,36 @@ const openIssueSingleModal = async (issueId, indexNo) => {
                       </span>
                     )}
                   </td>
-                  <td>
-                    {issue.priority}
-                  </td>
+                  <td>{issue.priority}</td>
                   {/* ASSIGNED TO */}
                   <td className="px-3 py-2">
                     {getUserName(issue.assignee_id)} {/* <-- use assignee_id */}
                   </td>
-                 {/* TAGS */}
-
-
+                  {/* TAGS */}
+                  {/* TAGS */}
+                  <td className="px-3 py-2">
+                    {issue.tags && (
+                      <div className="flex gap-1 flex-wrap justify-center">
+                        {(Array.isArray(issue.tags)
+                          ? issue.tags
+                          : [issue.tags]
+                        ).map((tag) => (
+                          <span
+                            key={tag}
+                            className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </td>
                 </tr>
               ))}
 
               {filteredIssues.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="text-center py-6 text-gray-400">
+                  <td colSpan="7" className="text-center py-6 text-gray-400">
                     No issues found
                   </td>
                 </tr>
@@ -565,10 +612,11 @@ const openIssueSingleModal = async (issueId, indexNo) => {
           <button
             onClick={handleAssignSprint}
             disabled={!form.sprintId || selectedIssues.length === 0}
-            className={`border px-4 py-2 rounded text-white ${!form.sprintId || selectedIssues.length === 0
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-500"
-              }`}
+            className={`border px-4 py-2 rounded text-white ${
+              !form.sprintId || selectedIssues.length === 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500"
+            }`}
           >
             Assign Sprint
           </button>
@@ -584,7 +632,7 @@ const openIssueSingleModal = async (issueId, indexNo) => {
         setNewComment={setNewComment}
         handleAddComment={handleAddComment}
         onIssueUpdated={handleUpdateIssue}
-         project={project}
+        project={project}
       />
     </>
   );

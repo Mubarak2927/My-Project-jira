@@ -23,6 +23,7 @@ import {
   getAllUsers,
   createsFeature,
   createSubtask,
+  getFeatures,
 } from "../API/projectAPI";
 import toast from "react-hot-toast";
 
@@ -77,6 +78,7 @@ const WorkItemCreate = () => {
   // Store original form and comments for restore
   const [originalForm] = useState(structuredClone(form)); // store initial form
   const [originalComments] = useState(structuredClone(comments)); // store initial comments
+  const [features, setFeatures] = useState([]);
 
   const storyPointsOptions = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
 
@@ -84,6 +86,14 @@ const WorkItemCreate = () => {
   useEffect(() => {
     if (type !== "epic" && project?.id) {
       getEpic(project.id).then(setEpics).catch(console.error);
+    }
+  }, [type, project]);
+
+  useEffect(() => {
+    if (["task", "story", "bug"].includes(type) && project?.id) {
+      getFeatures(project.id)
+        .then(setFeatures)
+        .catch(() => toast.error("Failed to load features"));
     }
   }, [type, project]);
 
@@ -244,7 +254,7 @@ const WorkItemCreate = () => {
           {/* LEFT */}
           <div className="col-span-2 space-y-4">
             <Input
-              className="outline-none"
+              className="outline-none shadow-inner/20 "
               placeholder={type === "epic" ? "Epic Name" : "Title"}
               value={form.name}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
@@ -256,7 +266,7 @@ const WorkItemCreate = () => {
               onChange={(e) =>
                 setForm((p) => ({ ...p, description: e.target.value }))
               }
-              className="w-full h-[30vh] px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
+              className="w-full h-[20vh] px-3 py-3 mt-5 rounded-xl shadow-inner/20 focus:ring-2 focus:ring-blue-400 outline-none"
             />
 
             {/* COMMENTS */}
@@ -296,15 +306,11 @@ const WorkItemCreate = () => {
                 </button>
               </div> */}
             {/* </div> */}
-          </div>
-
-          {/* RIGHT */}
-          {type !== "epic" && (
-            <div className="space-y-4 text-sm">
+            {type !== "epic" && (
               <div>
-                <p className="text-gray-500 mb-1">Epic</p>
+                <p className="text-gray-500 mb-1 mt-5">Epic</p>
                 <select
-                  className="w-full px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none mt-1"
+                  className="w-full px-3 py-3 rounded-xl shadow-inner/20  focus:ring-2 focus:ring-blue-400 outline-none mt-1"
                   value={form.epic_id}
                   onChange={(e) =>
                     setForm((p) => ({
@@ -321,11 +327,16 @@ const WorkItemCreate = () => {
                   ))}
                 </select>
               </div>
+            )}
+          </div>
 
+          {/* RIGHT */}
+          {type !== "epic" && (
+            <div className="space-y-4 text-sm">
               <div>
                 <p className="text-gray-500 mb-1">Priority</p>
                 <select
-                  className="w-full px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none mt-1"
+                  className="w-full px-3 py-3 rounded-xl shadow-inner/20  focus:ring-2 focus:ring-blue-400 outline-none mt-1"
                   value={form.priority}
                   onChange={(e) =>
                     setForm((p) => ({
@@ -348,7 +359,7 @@ const WorkItemCreate = () => {
                 <div>
                   <p className="text-gray-500 mb-1">Story Points</p>
                   <select
-                    className="w-full px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none mt-1"
+                    className="w-full px-3 py-3 rounded-xl shadow-inner/20  focus:ring-2 focus:ring-blue-400 outline-none mt-1"
                     value={form.story_points}
                     onChange={(e) =>
                       setForm((p) => ({
@@ -370,7 +381,7 @@ const WorkItemCreate = () => {
                 <p className="text-gray-500 mb-1">Estimated Hours</p>
                 <input
                   type="number"
-                  className="w-full px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none mt-1"
+                  className="w-full px-3 py-3 rounded-xl shadow-inner/20  focus:ring-2 focus:ring-blue-400 outline-none mt-1"
                   value={form.estimated_hours}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, estimated_hours: e.target.value }))
@@ -378,11 +389,30 @@ const WorkItemCreate = () => {
                   placeholder="Enter estimated hours"
                 />
               </div>
+              {["task", "story", "bug"].includes(type) && (
+                <div>
+                  <p className="text-gray-500 mb-1">Feature</p>
+                  <select
+                    className="w-full px-3 py-3 rounded-xl shadow-inner/20 focus:ring-2 focus:ring-blue-400 outline-none mt-1"
+                    value={form.feature_id}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, feature_id: e.target.value }))
+                    }
+                  >
+                    <option value="">No Feature</option>
+                    {features.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <p className="text-gray-500 mb-1">Assign To</p>
                 <select
-                  className="w-full px-3 py-3  rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none mt-1"
+                  className="w-full px-3 py-3  rounded-xl shadow-inner/20  focus:ring-2 focus:ring-blue-400 outline-none mt-1"
                   value={form.assignee}
                   onChange={(e) =>
                     setForm((p) => ({

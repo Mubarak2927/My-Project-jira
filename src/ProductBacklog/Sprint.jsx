@@ -10,6 +10,7 @@ import {
   updateSprint,
   deleteSprint,
   deleteIssueFromSprint,
+  getRunningSprints,
 } from "../API/projectAPI";
 
 export default function Sprint() {
