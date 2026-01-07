@@ -44,7 +44,7 @@ const Input = React.memo(
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      className=" w-full  px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
+      className=" w-full  px-3 py-3 rounded-xl shadow-inner/20 focus:ring-2 focus:ring-blue-400 outline-none"
     />
   )
 );
@@ -69,6 +69,9 @@ const WorkItemCreate = () => {
     feature_id: "", // new
     tags: [], // new
     location: "backlog", // default
+
+     start_date: "",
+  end_date: "",
   });
 
   /* ================= COMMENTS STATE ================= */
@@ -148,6 +151,10 @@ const WorkItemCreate = () => {
 
   /* ================= SUBMIT ================= */
   // WorkItemCreate.jsx
+  const toDateTime = (date) =>
+  date ? `${date}T00:00:00` : null;
+
+
   const handleSave = async () => {
     try {
       if (!form.name.trim()) {
@@ -160,6 +167,8 @@ const WorkItemCreate = () => {
           name: form.name,
           description: form.description,
           project_id: project.id,
+          start_date: toDateTime(form.start_date),
+    end_date: toDateTime(form.end_date),
         });
       } else if (type === "feature") {
         await createsFeature({
@@ -214,7 +223,7 @@ const WorkItemCreate = () => {
     <div className="fixed inset-0 backdrop-blur-sm bg-black/70 z-50 flex h-screen justify-center items-center pt-6">
       <div
         className={`bg-gray-200 rounded-lg shadow-xl overflow-hidden 
-    ${type === "epic" ? "w-[60vw] h-[40vh]" : "w-[90vw] h-[70vh]"}`}
+    ${type === "epic" ? "w-[50vw] h-[80vh]" : "w-[90vw] h-[70vh]"}`}
       >
         {/* ================= HEADER ================= */}
         <div className="flex justify-between items-center px-5 py-3 ">
@@ -254,7 +263,7 @@ const WorkItemCreate = () => {
           {/* LEFT */}
           <div className="col-span-2 space-y-4">
             <Input
-              className="outline-none shadow-inner/20 "
+              className="outline-none  "
               placeholder={type === "epic" ? "Epic Name" : "Title"}
               value={form.name}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
@@ -328,7 +337,36 @@ const WorkItemCreate = () => {
                 </select>
               </div>
             )}
+            {type === "epic" && (
+  <div className="grid grid-cols-2 gap-4 mt-4">
+    <div>
+      <p className="text-gray-500 mb-1">Start Date</p>
+      <input
+        type="date"
+        className="w-full px-3 py-3 rounded-xl shadow-inner/20 focus:ring-2 focus:ring-blue-400 outline-none"
+        value={form.start_date}
+        onChange={(e) =>
+          setForm((p) => ({ ...p, start_date: e.target.value }))
+        }
+      />
+    </div>
+
+    <div>
+      <p className="text-gray-500 mb-1">End Date</p>
+      <input
+        type="date"
+        className="w-full px-3 py-3 rounded-xl shadow-inner/20 focus:ring-2 focus:ring-blue-400 outline-none"
+        value={form.end_date}
+        onChange={(e) =>
+          setForm((p) => ({ ...p, end_date: e.target.value }))
+        }
+      />
+    </div>
+  </div>
+)}
+
           </div>
+          
 
           {/* RIGHT */}
           {type !== "epic" && (
