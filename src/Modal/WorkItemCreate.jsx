@@ -9,6 +9,7 @@ import {
   RotateCcw,
   Undo,
   Undo2,
+  Plus,
 } from "lucide-react";
 import { useNavigate, useParams, useOutletContext } from "react-router-dom";
 import {
@@ -21,6 +22,7 @@ import {
   getIssueComments,
   getAllUsers,
   createsFeature,
+  createSubtask,
 } from "../API/projectAPI";
 import toast from "react-hot-toast";
 
@@ -41,7 +43,7 @@ const Input = React.memo(
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-     className=" w-full  px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
+      className=" w-full  px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
     />
   )
 );
@@ -75,7 +77,6 @@ const WorkItemCreate = () => {
   // Store original form and comments for restore
   const [originalForm] = useState(structuredClone(form)); // store initial form
   const [originalComments] = useState(structuredClone(comments)); // store initial comments
-  
 
   const storyPointsOptions = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
 
@@ -137,59 +138,57 @@ const WorkItemCreate = () => {
 
   /* ================= SUBMIT ================= */
   // WorkItemCreate.jsx
-const handleSave = async () => {
-  try {
-    if (!form.name.trim()) {
-      toast.error("Title required");
-      return;
+  const handleSave = async () => {
+    try {
+      if (!form.name.trim()) {
+        toast.error("Title required");
+        return;
+      }
+
+      if (type === "epic") {
+        await createEpic({
+          name: form.name,
+          description: form.description,
+          project_id: project.id,
+        });
+      } else if (type === "feature") {
+        await createsFeature({
+          name: form.name,
+          description: form.description,
+          project_id: project.id,
+          priority: form.priority || null,
+          assignee_id: form.assignee || null,
+        });
+
+        toast.success("Feature Created");
+      } else {
+        await createIssues({
+          name: form.name,
+          description: form.description,
+          epic_id: form.epic_id || null,
+          priority: form.priority || null,
+          assignee_id: form.assignee || null,
+          type,
+          story_points: type === "story" ? form.story_points : null,
+          project_id: project.id,
+          sprint_id: form.sprint_id || null,
+          parent_id: form.parent_id || null,
+          estimated_hours: form.estimated_hours || null,
+          feature_id: form.feature_id || null,
+          location: form.location,
+          tags: form.tags,
+          comments,
+        });
+
+        toast.success(`${type} Created`);
+      }
+
+      navigate(-1, { state: { refreshBacklog: true } });
+    } catch (err) {
+      console.error(err);
+      toast.error("Something went wrong");
     }
-
-    if (type === "epic") {
-      await createEpic({
-        name: form.name,
-        description: form.description,
-        project_id: project.id,
-      });
-
-    } else if (type === "feature") {
-      await createsFeature({
-        name: form.name,
-        description: form.description,
-        project_id: project.id,
-        priority: form.priority || null,
-        assignee_id: form.assignee || null,
-      });
-
-      toast.success("Feature Created");
-
-    } else {
-      await createIssues({
-        name: form.name,
-        description: form.description,
-        epic_id: form.epic_id || null,
-        priority: form.priority || null,
-        assignee_id: form.assignee || null,
-        type,
-        story_points: type === "story" ? form.story_points : null,
-        project_id: project.id,
-        sprint_id: form.sprint_id || null,
-        parent_id: form.parent_id || null,
-        estimated_hours: form.estimated_hours || null,
-        feature_id: form.feature_id || null,
-        location: form.location,
-        tags: form.tags,
-        comments,
-      });
-
-      toast.success(`${type} Created`);
-    }
-
-    navigate(-1, { state: { refreshBacklog: true } });
-  } catch (err) {
-    console.error(err);
-    toast.error("Something went wrong");
-  }
-};
+  };
 
   const handleRestoreIssue = () => {
     if (!window.confirm("Undo all changes?")) return;
@@ -203,11 +202,10 @@ const handleSave = async () => {
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm bg-black/70 z-50 flex h-screen justify-center items-center pt-6">
-<div
-  className={`bg-gray-200 rounded-lg shadow-xl overflow-hidden 
-    ${type === "epic" ? "w-[60vw] h-[40vh]" : "w-[90vw] h-[65vh]"}`}
->
-
+      <div
+        className={`bg-gray-200 rounded-lg shadow-xl overflow-hidden 
+    ${type === "epic" ? "w-[60vw] h-[40vh]" : "w-[90vw] h-[70vh]"}`}
+      >
         {/* ================= HEADER ================= */}
         <div className="flex justify-between items-center px-5 py-3 ">
           <div className="flex items-center gap-2">
@@ -258,7 +256,7 @@ const handleSave = async () => {
               onChange={(e) =>
                 setForm((p) => ({ ...p, description: e.target.value }))
               }
-             className="w-full h-[30vh] px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
+              className="w-full h-[30vh] px-3 py-3 rounded-xl shadow-inner focus:ring-2 focus:ring-blue-400 outline-none"
             />
 
             {/* COMMENTS */}

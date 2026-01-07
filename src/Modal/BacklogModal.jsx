@@ -19,6 +19,7 @@ import {
   getSprint,
   deleteComments,
   getSingleIssues,
+  createSubtask,
 } from "../API/projectAPI";
 import { deleteLinkById } from "../API/LinkedItems";
 import ParentPickerModal from "./ParentPickerModal";
@@ -44,6 +45,17 @@ const BacklogModal = ({
 
   const [sprints, setSprints] = useState([]);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+
+   const [openSubtaskModal, setOpenSubtaskModal] = useState(false);
+  
+  const [subtaskForm, setSubtaskForm] = useState({
+    name: "",
+    description: "",
+    estimated_hours: "",
+    priority: "",
+    assignee: "",
+  });
+  
 
   /* ================= INIT ================= */
   useEffect(() => {
@@ -80,6 +92,41 @@ const BacklogModal = ({
     } catch (err) {
       console.error(err);
       toast.error("Failed to load sprints");
+    }
+  };
+   const handleCreateSubtask = async () => {
+    if (!subtaskForm.name.trim()) {
+      toast.error("Subtask title required");
+      return;
+    }
+  
+    try {
+      await createSubtask(modalIssue.id, {
+  project_id: modalIssue.project_id,   // ✅ REQUIRED
+  type: "subtask",                     // ✅ REQUIRED
+  parent_id: modalIssue.id,            // 🔥 very important
+  name: subtaskForm.name,
+  description: subtaskForm.description,
+  estimated_hours: subtaskForm.estimated_hours || null,
+  priority: subtaskForm.priority || null,
+  assignee_id: subtaskForm.assignee || null,
+});
+
+  
+      toast.success("Subtask created");
+  
+      setSubtaskForm({
+        name: "",
+        description: "",
+        estimated_hours: "",
+        priority: "",
+        assignee: "",
+      });
+  
+      setOpenSubtaskModal(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to create subtask");
     }
   };
 
@@ -234,25 +281,23 @@ const BacklogModal = ({
     }
   };
 
-  
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm("Delete this comment?")) return;
 
-const handleDeleteComment = async (commentId) => {
-  if (!window.confirm("Delete this comment?")) return;
+    try {
+      await deleteComments(commentId);
+      toast.success("Comment deleted");
 
-  try {
-    await deleteComments(commentId);
-    toast.success("Comment deleted");
-
-    // 🔥 UI update – parent state la irundhu remove pannum
-    setModalIssue((prev) => ({
-      ...prev,
-      comments: prev.comments?.filter((c) => c.id !== commentId),
-    }));
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to delete comment");
-  }
-};
+      // 🔥 UI update – parent state la irundhu remove pannum
+      setModalIssue((prev) => ({
+        ...prev,
+        comments: prev.comments?.filter((c) => c.id !== commentId),
+      }));
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete comment");
+    }
+  };
 
   const storyPointsOptions = [0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89];
 
@@ -285,11 +330,13 @@ const handleDeleteComment = async (commentId) => {
                 autoFocus
               />
             )}
+            <p className="text-sm mt-2 capitalize">
+              Project Name :{" "}
+              <span className="font-semibold">{project?.name}</span>
+            </p>
           </div>
 
           <div className="flex gap-4 items-center">
-           
-
             <button
               onClick={handleRestoreIssue}
               className="hover:scale-110 transition"
@@ -552,14 +599,13 @@ const handleDeleteComment = async (commentId) => {
                       </p>
 
                       <div>
-                       <button
-  onClick={() => handleDeleteComment(c.id)}
-  className="text-red-600 cursor-pointer hover:scale-110 transition"
-  title="Delete comment"
->
-  <Trash2 size={14} />
-</button>
-
+                        <button
+                          onClick={() => handleDeleteComment(c.id)}
+                          className="text-red-600 cursor-pointer hover:scale-110 transition"
+                          title="Delete comment"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -652,6 +698,127 @@ const handleDeleteComment = async (commentId) => {
                 </select>
               </div>
             )}
+            <div>
+               <button
+                onClick={() => setOpenSubtaskModal(true)}
+                className="hover:scale-105 flex gap-1 text-blue-600  text-sm items-center transition cursor-pointer"
+                title="Add Sub-task"
+              >
+                <Plus size={18} className="text-blue-600" />
+                Add Subtask
+              </button>
+              {openSubtaskModal && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center">
+                  <div className="bg-white w-[40vw] rounded-xl shadow-xl p-6 space-y-4">
+              
+                    {/* HEADER */}
+                    <div className="flex justify-between items-center">
+                      <h2 className="text-xl font-semibold text-blue-600">
+                        Create Subtask
+                      </h2>
+                      <X
+                        className="cursor-pointer text-red-500"
+                        onClick={() => setOpenSubtaskModal(false)}
+                      />
+                    </div>
+              
+                    {/* PARENT TASK */}
+                    <div>
+                      <label className="text-sm text-gray-500">Parent Task</label>
+                      <input
+                        value={modalIssue?.name}
+                        disabled
+                        className="w-full px-3 py-2 bg-gray-100 rounded-md"
+                      />
+                    </div>
+              
+                    {/* TITLE */}
+                    <input
+                      placeholder="Subtask Title"
+                      value={subtaskForm.name}
+                      onChange={(e) =>
+                        setSubtaskForm((p) => ({ ...p, name: e.target.value }))
+                      }
+                      className="w-full px-3 py-2 rounded-md border"
+                    />
+              
+                    {/* DESCRIPTION */}
+                    <textarea
+                      placeholder="Description"
+                      value={subtaskForm.description}
+                      onChange={(e) =>
+                        setSubtaskForm((p) => ({ ...p, description: e.target.value }))
+                      }
+                      className="w-full px-3 py-2 rounded-md border"
+                    />
+              
+                    {/* ESTIMATED HOURS */}
+                    <input
+                      type="number"
+                      placeholder="Estimated Hours"
+                      value={subtaskForm.estimated_hours}
+                      onChange={(e) =>
+                        setSubtaskForm((p) => ({
+                          ...p,
+                          estimated_hours: e.target.value,
+                        }))
+                      }
+                      className="w-full px-3 py-2 rounded-md border"
+                    />
+              
+                    {/* PRIORITY */}
+                    <select
+                      value={subtaskForm.priority}
+                      onChange={(e) =>
+                        setSubtaskForm((p) => ({ ...p, priority: e.target.value }))
+                      }
+                      className="w-full px-3 py-2 rounded-md border"
+                    >
+                      <option value="">Select Priority</option>
+                      <option value="highest">Highest</option>
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                      <option value="lowest">Lowest</option>
+                    </select>
+              
+                    {/* ASSIGNEE */}
+                    <select
+                      value={subtaskForm.assignee}
+                      onChange={(e) =>
+                        setSubtaskForm((p) => ({ ...p, assignee: e.target.value }))
+                      }
+                      className="w-full px-3 py-2 rounded-md border"
+                    >
+                      <option value="">Assign To</option>
+                      {users.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.full_name}
+                        </option>
+                      ))}
+                    </select>
+              
+                    {/* ACTIONS */}
+                    <div className="flex justify-end gap-3 pt-3">
+                      <button
+                        onClick={() => setOpenSubtaskModal(false)}
+                        className="px-4 py-2 border rounded-md"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleCreateSubtask}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md"
+                      >
+                        Create Subtask
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+            
 
             {/* RELATED WORK */}
             <div>

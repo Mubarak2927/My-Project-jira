@@ -13,6 +13,8 @@ const BacklogBin = () => {
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+
 
   // 🔥 Fetch deleted backlog items
   const fetchTrash = async () => {
@@ -55,6 +57,45 @@ const BacklogBin = () => {
       toast.error("Restore failed");
     }
   };
+  // single select
+const toggleSelect = (id) => {
+  setSelectedIds((prev) =>
+    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+  );
+};
+
+// select all
+const toggleSelectAll = () => {
+  if (selectedIds.length === items.length) {
+    setSelectedIds([]);
+  } else {
+    setSelectedIds(items.map((item) => item.id));
+  }
+};
+const handleBulkDelete = async () => {
+  if (selectedIds.length === 0) {
+    toast.error("Select items first da 😅");
+    return;
+  }
+
+  if (!window.confirm(`Delete ${selectedIds.length} items permanently?`))
+    return;
+
+  try {
+    await Promise.all(
+      selectedIds.map((id) =>
+        permanentDeleteRecycleItem("issue", id)
+      )
+    );
+
+    toast.success("Selected items deleted");
+    setSelectedIds([]);
+    fetchTrash();
+  } catch (err) {
+    toast.error("Bulk delete failed");
+  }
+};
+
 
   // 🔥 Permanent delete
   const handlePermanentDelete = async (item) => {
@@ -71,7 +112,19 @@ const BacklogBin = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-semibold mb-4">Backlog Recycle Bin</h1>
+      <div className="flex justify-between mb-3">
+  <h1 className="text-xl font-semibold">Backlog Recycle Bin</h1>
+
+  {selectedIds.length > 0 && (
+    <button
+      onClick={handleBulkDelete}
+      className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+    >
+      Delete Selected ({selectedIds.length})
+    </button>
+  )}
+</div>
+
 
       {loading && (
         <div className="text-center text-gray-500 py-10">
@@ -89,46 +142,65 @@ const BacklogBin = () => {
         <div className="overflow-x-auto bg-white rounded-lg shadow">
           <table className="min-w-full text-center text-sm">
             <thead className="bg-gray-300">
-              <tr>
-                <th className=" p-3 text-center">#</th>
-                <th className=" p-3">Name</th>
-                <th className=" p-3">Type</th>
-                <th className=" p-3">Deleted At</th>
-                <th className=" p-3">Actions</th>
-              </tr>
-            </thead>
+  <tr>
+    <th className="p-3">
+      <input
+        type="checkbox"
+        checked={
+          items.length > 0 && selectedIds.length === items.length
+        }
+        onChange={toggleSelectAll}
+      />
+    </th>
+    <th className="p-3">#</th>
+    <th className="p-3">Name</th>
+    <th className="p-3">Type</th>
+    <th className="p-3">Deleted At</th>
+    <th className="p-3">Actions</th>
+  </tr>
+</thead>
+
 
             <tbody>
-              {items.map((item, index) => (
-                <tr key={item.id} className="hover:bg-gray-200 cursor-pointer">
-                  <td className="p-3">{index + 1}</td>
-                  <td className="p-3">{item.name}</td>
-                  <td className="p-3">{item.type}</td>
+  {items.map((item, index) => (
+    <tr key={item.id} className="hover:bg-gray-200">
+      <td className="p-3">
+        <input
+          type="checkbox"
+          checked={selectedIds.includes(item.id)}
+          onChange={() => toggleSelect(item.id)}
+        />
+      </td>
 
-                  <td className="p-3 text-gray-500 text-xs">
-                    {item.deleted_at
-                      ? new Date(item.deleted_at).toLocaleString()
-                      : "-"}
-                  </td>
+      <td className="p-3">{index + 1}</td>
+      <td className="p-3">{item.name}</td>
+      <td className="p-3">{item.type}</td>
 
-                  <td className="p-3 justify-center flex gap-4">
-                    <button
-                      onClick={() => handleRestore(item)}
-                      className="p-2 rounded-full cursor-pointer bg-green-100 text-green-600 hover:bg-green-200 transition"
-                    >
-                      <RotateCcw size={17} />
-                    </button>
+      <td className="p-3 text-gray-500 text-xs">
+        {item.deleted_at
+          ? new Date(item.deleted_at).toLocaleString()
+          : "-"}
+      </td>
 
-                    <button
-                      onClick={() => handlePermanentDelete(item)}
-                      className="p-2 rounded-full cursor-pointer bg-red-100 text-red-600 hover:bg-red-200 transition"
-                    >
-                      <Trash2 size={17} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+      <td className="p-3 flex gap-4 justify-center">
+        <button
+          onClick={() => handleRestore(item)}
+          className="p-2 bg-green-100 text-green-600 rounded-full"
+        >
+          <RotateCcw size={17} />
+        </button>
+
+        <button
+          onClick={() => handlePermanentDelete(item)}
+          className="p-2 bg-red-100 text-red-600 rounded-full"
+        >
+          <Trash2 size={17} />
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
           </table>
         </div>
       )}

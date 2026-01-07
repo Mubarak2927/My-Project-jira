@@ -146,6 +146,18 @@ export const createIssues = async (payload) => {
   const res = await API.post(`/issues/`, payload);
   return res.data;
 };
+export const createSubtask = async (issueId, payload) => {
+  const res = await API.post(
+    `/issues/${issueId}/subtasks`,
+    payload
+  );
+  return res.data;
+};
+
+export const getSubtask = async (projectId) => {
+  const res = await API.get(`/issues/?project_id=${projectId}`);
+  return res.data;
+};
 
 export const getIssues = async (projectId) => {
   const res = await API.get(`/issues/?project_id=${projectId}`);
